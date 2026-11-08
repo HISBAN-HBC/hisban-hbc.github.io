@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#070b1a">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="الحُسبان">
+<title>ساعة حُسبان</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Reem+Kufi:wght@500;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: one centered column — header, dial, day/night arcs, sunrise/sunset, cities, compass, my location, sun readings */
+:root{
+  --sky:#070b1a; --sky2:#0f1630; --panel:rgba(20,28,58,.72); --line:rgba(232,190,92,.22);
+  --gold:#e8be5c; --gold-soft:#f3d68f; --night:#5b8fd9; --night-deep:#2c4a8a;
+  --ink:#eef0f8; --muted:#97a0c0;
+  --ok:#5fc48a; --warn:#f0a24a; --bad:#e5645a;
+  --display:"Reem Kufi","IBM Plex Sans Arabic",Tahoma,sans-serif;
+  --body:"IBM Plex Sans Arabic",Tahoma,sans-serif;
+  --num:"JetBrains Mono",ui-monospace,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--sky);color:var(--ink);font-family:var(--body);font-size:14px;min-height:100vh;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+  background-image:radial-gradient(ellipse at 50% 0%,#1b2654 0%,transparent 60%),radial-gradient(ellipse at 50% 120%,#3a2a12 0%,transparent 55%)}
+[hidden]{display:none!important}
+#stars{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+.wrap{position:relative;z-index:1;max-width:520px;margin:0 auto;padding-block:16px 40px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  display:flex;flex-direction:column;gap:18px}
+header{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px}
+header .sel{justify-self:start;border-color:rgba(232,190,92,.45);background:rgba(10,12,22,.75);border-radius:14px;padding:8px 12px}
+header .sel select{color:var(--gold)}
+h1{font-family:var(--display);color:var(--gold);font-size:1.45rem;margin:0;text-align:center;white-space:nowrap}
+.sel{display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:6px 10px}
+.sel select{background:transparent;color:var(--ink);border:0;font:600 .95rem var(--body);outline:none}
+.sel select option{background:var(--sky2)}
+.sel:focus-within{border-color:var(--gold)}
+.dates{display:flex;justify-content:space-between;color:var(--muted);font-size:.8rem;margin-top:-8px}
+.dial{position:relative;width:100%;max-width:400px;margin:0 auto}
+.dial svg{width:100%;height:auto;display:block;overflow:visible}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;backdrop-filter:blur(6px)}
+.lbl{font-size:.75rem;color:var(--muted);letter-spacing:.02em}
+.num{font-family:var(--num);font-variant-numeric:tabular-nums}
+.bar{height:14px;border-radius:7px;overflow:hidden;display:flex;margin:12px 0 8px;box-shadow:0 0 12px rgba(232,190,92,.18)}
+.arcs{background:rgba(6,8,16,.82);border-color:rgba(232,190,92,.3)}
+.arcs .row{align-items:baseline}
+.arcs .t{color:var(--muted);font-size:.85rem}
+.arcs #arcs{color:var(--gold);font-size:.82rem;direction:ltr}
+.arcs .num{direction:ltr;unicode-bidi:isolate}
+.ext{background:rgba(6,8,16,.82);border-color:rgba(232,190,92,.3);margin-top:-6px}
+.ext .hd{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+.ext .hd .t{color:var(--muted);font-size:.85rem}
+.ext .sel{padding:4px 8px}
+.ext .sel select{color:var(--gold);font-size:.85rem}
+.xg{display:grid;grid-template-columns:repeat(3,1fr);grid-template-areas:"ne n nw" "e c w" "se s sw";gap:6px}
+.xc{text-align:center;padding:7px 3px;border:1px solid var(--line);border-radius:12px;background:var(--panel);min-width:0}
+.xc .dr{color:var(--muted);font-size:.68rem}
+.xc .co{font-size:.72rem;margin:3px 0;direction:ltr;unicode-bidi:isolate;font-family:var(--num);white-space:nowrap}
+.xmap{width:100%;height:auto;display:block;margin:0 auto 10px;max-width:420px;border:1px solid var(--line);border-radius:12px;background:rgba(2,3,8,.6)}
+.xc .an{color:var(--gold);font-size:.8rem;direction:ltr;unicode-bidi:isolate}
+.xc.c{border-color:rgba(232,190,92,.55)}
+.xk{display:grid;place-items:center;color:var(--muted);font-size:.66rem;text-align:center;line-height:1.5}
+.prBtn{justify-self:end;width:42px;height:42px;border-radius:14px;border:1px solid rgba(232,190,92,.45);background:rgba(10,12,22,.75);display:grid;place-items:center;cursor:pointer;padding:0}
+.prBtn[aria-pressed="false"]{opacity:.45}
+.prayers{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.pr{text-align:center;padding:8px 2px;border:1px solid var(--line);border-radius:12px;background:var(--panel);min-width:0}
+.pr .ic{font-size:1rem;line-height:1}
+.pr .nm{font-size:.8rem;font-weight:600;margin:3px 0}
+.pr .an{color:var(--gold);font-size:.68rem;letter-spacing:-.02em;direction:ltr;unicode-bidi:isolate}
+.pr.next{border-color:var(--gold);box-shadow:0 0 0 1px rgba(232,190,92,.35) inset}
+.prNote{color:var(--muted);font-size:.72rem;margin-top:8px}
+.bar .d{background:linear-gradient(90deg,#8a6512,var(--gold) 60%,#f6c443)}
+.bar .n{background:linear-gradient(90deg,#16264d,var(--night-deep) 40%,#4f7fc8)}
+.row{display:flex;justify-content:space-between;gap:8px;font-size:.8rem;color:var(--muted);flex-wrap:wrap}
+.cities{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.city{text-align:center;padding:10px 4px;border:1px solid var(--line);border-radius:12px;background:var(--panel);min-width:0}
+.city.on{border-color:var(--gold);background:rgba(232,190,92,.1)}
+.city .nm{font-weight:600;font-size:.88rem;margin:3px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.city .an{color:var(--gold);font-size:.85rem}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.stat{padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--panel);min-width:0}
+.stat b{display:block;font-size:1.05rem;margin-top:2px;direction:ltr;text-align:right;white-space:nowrap;overflow-x:auto}
+h2{font-family:var(--display);color:var(--gold);font-size:1.15rem;margin:0}
+.note{font-size:.75rem;color:var(--muted);line-height:1.7;margin:0}
+/* HISBAN location state */
+.loc{display:flex;flex-direction:column;gap:12px}
+.loc-head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.badge{display:inline-flex;align-items:center;gap:6px;font-size:.78rem;font-weight:600;border-radius:999px;padding:4px 10px;border:1px solid currentColor}
+.badge::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.badge.ok{color:var(--ok);background:rgba(95,196,138,.1)}
+.badge.warn{color:var(--warn);background:rgba(240,162,74,.1)}
+.badge.bad{color:var(--bad);background:rgba(229,100,90,.1)}
+.kv{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px}
+.kv>div{min-width:0}
+.kv b{display:block;font-size:.92rem;margin-top:2px;direction:ltr;text-align:right;white-space:nowrap;overflow-x:auto}
+.kv .wide{grid-column:1/-1}
+#radius,#impact,#age,#dist{direction:rtl}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.fields label{display:flex;flex-direction:column;gap:4px;min-width:0}
+.fields input,.paste{width:100%;min-width:0;background:var(--sky2);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:9px 10px;font:500 .9rem var(--num);direction:ltr;text-align:left}
+.paste{font-family:var(--body);font-size:.82rem}
+.fields input:focus,.paste:focus{outline:none;border-color:var(--gold)}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+.btn{flex:1;min-width:120px;border:1px solid var(--gold);background:rgba(232,190,92,.12);color:var(--gold);border-radius:10px;padding:10px 12px;font:600 .88rem var(--body);cursor:pointer}
+.btn.alt{border-color:var(--line);color:var(--ink);background:transparent}
+.btn.on{background:var(--gold);color:var(--sky)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+#locmsg{font-size:.78rem;color:var(--muted);min-height:1em;line-height:1.6}
+/* Compass */
+.cmp{display:flex;flex-direction:column;gap:12px;align-items:stretch}
+.cmp-dial{width:100%;max-width:340px;margin:0 auto;touch-action:none}
+.cmp-dial svg{width:100%;height:auto;display:block}
+.cmp-read{text-align:center}
+.cmp-read b{font-size:2rem;color:var(--gold);display:block;line-height:1.1}
+.cmp-read span{color:var(--muted);font-size:.85rem}
+.cmp-legend{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.cmp-legend>div{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;font-size:.85rem;min-width:0}
+.cmp-legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-inline-end:6px;vertical-align:middle}
+.cmp-legend b{direction:ltr;font-family:var(--num)}
+@media (max-width:380px){.cities{grid-template-columns:repeat(2,1fr)}.kv{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){#stars{display:none}</style>
+</head>
+<body>
+<canvas id="stars"></canvas>
+<div class="wrap">
+  <header>
+    <label class="sel" for="city"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" aria-hidden="true"><path d="M12 22s7-6.1 7-12a7 7 0 1 0-14 0c0 5.9 7 12 7 12z"/><circle cx="12" cy="10" r="2.6"/></svg><select id="city"></select></label>
+    <h1>ساعة حُسبان</h1>
+    <button class="prBtn" id="prBtn" aria-pressed="true" title="الزوايا الهندسية للصلوات" aria-label="الزوايا الهندسية للصلوات"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 12V3"/><path d="M12 12l6.4 6.4"/><path d="M12 12L4.6 16.5"/><path d="M12 6.2a5.8 5.8 0 0 1 4.1 1.7" stroke-dasharray="1.5 1.5"/><circle cx="12" cy="12" r="1.4" fill="var(--gold)"/></svg></button>
+  </header>
+  <div class="dates"><span id="greg"></span><span id="hijri"></span></div>
+
+  <div class="dial"><svg id="dial" viewBox="-72 -46 444 392" aria-label="قرص الشمس اليومي"></svg></div>
+
+  <section class="card ext">
+    <div class="hd"><span class="t">🧭 زاوية حُسبان في أطراف الدولة</span><label class="sel"><select id="country" aria-label="الدولة"></select></label></div>
+    <svg class="xmap" id="xmap" viewBox="0 0 300 230" role="img" aria-label="خريطة الدولة وأطرافها"></svg>
+    <div class="xg" id="xg"></div>
+    <div class="prNote">الحدود الفعلية من Natural Earth، والإحداثيات تقريبية بحدود كيلومتر.</div>
+  </section>
+
+  <section class="card arcs">
+    <div class="row"><span class="t">◐ تمدد قوس النهار والليل</span><span class="num" id="arcs"></span></div>
+    <div class="bar"><div class="d" id="bd"></div><div class="n" id="bn"></div></div>
+    <div class="row"><span>نهار <span class="num" id="dl"></span></span><span class="num">360°</span><span>ليل <span class="num" id="nl"></span></span></div>
+  </section>
+
+  <section class="card" id="prCard">
+    <div class="lbl" style="margin-bottom:8px">🕌 الزوايا الهندسية للصلوات (زاوية حُسبان)</div>
+    <div class="prayers" id="prayers"></div>
+    <div class="prNote">الفجر عند انخفاض الشمس 18° والعشاء عند 17° تحت الأفق، والعصر عند ظل المثل.</div>
+  </section>
+
+  <section class="stats" style="margin-top:-8px">
+    <div class="stat"><span class="lbl">الشروق</span><b class="num" id="rise"></b></div>
+    <div class="stat"><span class="lbl">الغروب</span><b class="num" id="set"></b></div>
+  </section>
+
+  <section>
+    <div class="lbl" style="margin-bottom:8px">زاوية الحُسبان الآن في مدن أخرى</div>
+    <div class="cities" id="cities"></div>
+  </section>
+
+  <section class="card cmp" aria-label="البوصلة">
+    <div class="loc-head"><h2>البوصلة</h2><span class="badge warn" id="cmpState">متوقفة</span></div>
+    <div class="cmp-dial"><svg id="cmp" viewBox="-24 -30 348 354" role="img" aria-label="قرص البوصلة"></svg></div>
+    <div class="cmp-read"><b class="num" id="cmpDeg">—</b><span id="cmpDir">شغّل البوصلة لقراءة اتجاه الهاتف</span><div id="cmpAim" style="font-size:.85rem;margin-top:4px;color:var(--muted)"></div></div>
+    <div class="cmp-legend">
+      <div><span><i style="background:var(--gold)"></i>الشمس الآن</span><b id="lgSun">—</b></div>
+      <div><span><i style="background:#ff9f43;border-radius:2px;width:5px;height:14px"></i>شروق اليوم</span><b id="lgRise">—</b></div>
+      <div><span><i style="background:var(--night);border-radius:2px;width:5px;height:14px"></i>غروب اليوم</span><b id="lgSet">—</b></div>
+      <div><span><i style="background:#3fbf7f;border-radius:2px"></i>القبلة</span><b id="lgQibla">—</b></div>
+    </div>
+    <div class="btns">
+      <button class="btn" id="cmpBtn" type="button">تشغيل البوصلة</button>
+      <button class="btn alt" id="cmpChk" type="button" hidden>افحص بالشمس</button>
+      <button class="btn alt" id="cmpCal" type="button" hidden>معايرة بالشمس</button>
+    </div>
+    <p class="note" id="cmpNote">البوصلة تعمل دون شبكة ولا إنترنت، من المستشعر المغناطيسي في الهاتف. أمسك الهاتف أفقيًا بعيدًا عن المعادن. إن اضطربت القراءة، حرّك الهاتف في شكل الرقم 8.</p>
+  </section>
+
+  <section class="card loc" aria-live="polite">
+    <div class="loc-head"><h2>موقعي</h2><span class="badge bad" id="state">غير محدد</span></div>
+    <div class="kv">
+      <div class="wide"><span class="lbl">الإحداثيات</span><b class="num" id="coords">—</b></div>
+      <div><span class="lbl">المصدر</span><b id="src" style="font-family:var(--body);direction:rtl">—</b></div>
+      <div><span class="lbl">آخر تحديد</span><b id="age" style="font-family:var(--body);direction:rtl">—</b></div>
+    </div>
+    <div class="btns">
+      <button class="btn" id="gps" type="button">حدّد موقعي بـ GPS</button>
+      <button class="btn alt" id="manual" type="button">إدخال يدوي</button>
+    </div>
+    <div id="manualbox" class="loc" hidden>
+      <div class="fields">
+        <label for="lat"><span class="lbl">خط العرض</span><input id="lat" inputmode="decimal" placeholder="36.7538"></label>
+        <label for="lon"><span class="lbl">خط الطول</span><input id="lon" inputmode="decimal" placeholder="3.0588"></label>
+      </div>
+      <input class="paste" id="paste" aria-label="لصق إحداثيات أو رابط خرائط" placeholder="أو الصق رابط خرائط Google أو الإحداثيات: 36.75, 3.05">
+      <button class="btn" id="apply" type="button">اعتمد هذا الموقع</button>
+    </div>
+    <div id="locmsg"></div>
+  </section>
+
+  <section class="stats">
+    <div class="stat"><span class="lbl">ارتفاع الشمس</span><b class="num" id="alt"></b></div>
+    <div class="stat"><span class="lbl">سَمت الشمس</span><b class="num" id="az"></b></div>
+    <div class="stat"><span class="lbl">طول النهار</span><b class="num" id="dlen"></b></div>
+    <div class="stat"><span class="lbl">إضاءة القمر</span><b class="num" id="moon"></b></div>
+  </section>
+
+  <p class="note">زاوية الحُسبان = موضع اللحظة في دورة اليوم الكاملة (360°) محسوبًا من شروق الشمس، حيث كل ساعة تعادل 15°. في القرص: الأعلى بداية النهار، واليمين منتصف قوس النهار، والأسفل الغروب وبداية اليوم، واليسار منتصف قوس الليل.</p>
+  <p class="note">يحدد GPS موقعك مرة واحدة عند الفتح ثم يتوقف، ويُحفظ الموقع فيعمل التطبيق دون شبكة ولا إنترنت. الحساب فلكي تقريبي بدقة دقيقة إلى دقيقتين.</p>
+  <p class="note" style="text-align:center"><a href="privacy.html" style="color:var(--gold)">سياسة الخصوصية</a> · ساعة حُسبان 1.0</p>
+</div>
+
+<script src="hisban-core.js"></script>
+<script>
+/* ---------- HISBAN Clock 1.0 ---------- */
+let fix=loadFix();
+const CITIES=BASE_CITIES.map(c=>c.slice());
+const p0=fixPos(fix)||[36.7538,3.0588];
+CITIES.push(["موقعي الحالي",p0[0],p0[1],devTz]);
+const MINE=CITIES.length-1,COMPARE=[0,11,5,10];
+let ci=store.get("husban-city");if(ci===null||!CITIES[ci])ci=fix?MINE:0;
+const sel=$("city");CITIES.forEach((c,i)=>sel.add(new Option(c[0],i)));sel.value=ci;
+sel.onchange=()=>{ci=+sel.value;store.set("husban-city",ci);tick()};
+const msg=t=>{$("locmsg").textContent=t};
+const sunNow=()=>{const [,lat,lon,tz]=CITIES[ci];return sunAt(lat,lon,tz)};
+
+/* ---------- my location ---------- */
+function newFix(lat,lon,acc,src){fix=freshFix(lat,lon,acc,src);store.set("hisban-fix",fix);ci=MINE;sel.value=MINE;store.set("husban-city",ci);tick()}
+function gpsFix(auto){
+  if(!window.isSecureContext){msg("تحديد الموقع يحتاج أن تُفتح الصفحة عبر https. أدخل الإحداثيات يدويًا.");if(!fix)$("manualbox").hidden=false;return}
+  if(!navigator.geolocation){msg("هذا المتصفح لا يدعم تحديد الموقع. أدخل الإحداثيات يدويًا.");$("manualbox").hidden=false;return}
+  $("gps").disabled=true;msg(auto?"تحديد الموقع بـ GPS…":"جارٍ تحديد الموقع…");
+  navigator.geolocation.getCurrentPosition(p=>{
+    $("gps").disabled=false;newFix(p.coords.latitude,p.coords.longitude,p.coords.accuracy||30,"gps");
+    msg("تم التحديد بدقة ± "+Math.round(p.coords.accuracy)+" م، وأُطفئ GPS.");
+  },e=>{
+    $("gps").disabled=false;const why=e&&e.code===1?"رُفض إذن الموقع.":"تعذّر الوصول إلى الأقمار.";
+    msg(fix?why+" يعمل التطبيق من آخر موقع محفوظ.":why+" اختر مدينة أو أدخل الإحداثيات يدويًا.");
+    if(!fix)$("manualbox").hidden=false;
+  },{enableHighAccuracy:true,timeout:15000,maximumAge:60000});
+}
+$("gps").onclick=()=>gpsFix(false);
+$("manual").onclick=()=>{const b=$("manualbox");b.hidden=!b.hidden;if(!b.hidden){const p=fixPos(fix)||[CITIES[ci][1],CITIES[ci][2]];$("lat").value=p[0].toFixed(6);$("lon").value=p[1].toFixed(6)}};
+$("paste").addEventListener("input",e=>{const m=parseCoords(e.target.value);if(m){$("lat").value=m[0];$("lon").value=m[1]}});
+$("apply").onclick=()=>{
+  const lat=parseFloat($("lat").value),lon=parseFloat($("lon").value);
+  if(!isFinite(lat)||!isFinite(lon)||Math.abs(lat)>90||Math.abs(lon)>180){msg("الإحداثيات غير صالحة. خط العرض بين −90 و90، وخط الطول بين −180 و180.");return}
+  newFix(lat,lon,100,"manual");$("manualbox").hidden=true;msg("تم اعتماد الموقع اليدوي.");
+};
+function renderLoc(){
+  const st=$("state");
+  if(!fix){st.className="badge bad";st.textContent="غير محدد";["coords","src","age"].forEach(k=>$(k).textContent="—");return}
+  const p=fixPos(fix),age=Date.now()-fix.t;
+  $("coords").textContent=p[0].toFixed(5)+"°, "+p[1].toFixed(5)+"°";
+  $("src").textContent=fix.src==="gps"?"GPS ± "+Math.round(fix.acc)+" م":"إدخال يدوي";
+  $("age").textContent=fmtAge(age);
+  if(age>7*864e5){st.className="badge warn";st.textContent="قديم: حدّثه"}
+  else{st.className="badge "+(fix.src==="gps"?"ok":"warn");st.textContent=fix.src==="gps"?"GPS":"يدوي"}
+}
+
+/* ---------- compass ---------- */
+let compassOn=false,shown=0,riseAzNow=null;
+const CP=(r,a)=>[150+r*Math.sin(a*rad),150-r*Math.cos(a*rad)];
+(function buildCompass(){
+  let t="";
+  for(let a=0;a<360;a+=2){const big=a%30===0,mid=a%10===0;const[x1,y1]=CP(146,a),[x2,y2]=CP(big?128:mid?134:139,a);
+    t+=`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="var(--ink)" stroke-opacity="${big?.9:mid?.55:.25}" stroke-width="${big?1.6:1}"/>`}
+  for(let a=0;a<360;a+=30){if(a%90===0)continue;const[x,y]=CP(116,a);t+=`<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-size="11" fill="var(--muted)" font-family="var(--num)" transform="rotate(${a} ${x.toFixed(1)} ${y.toFixed(1)})">${a}</text>`}
+  [["شمال",0,"#e5645a"],["شرق",90,"var(--ink)"],["جنوب",180,"var(--ink)"],["غرب",270,"var(--ink)"]].forEach(([l,a,c])=>{const[x,y]=CP(108,a);
+    t+=`<text class="cl" data-x="${x.toFixed(1)}" data-y="${y.toFixed(1)}" x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="700" fill="${c}" font-family="var(--display)">${l}</text>`});
+  $("cmp").innerHTML=`<circle cx="150" cy="150" r="148" fill="var(--sky2)" stroke="var(--line)" stroke-width="2"/>
+   <g id="cmpCard">${t}<g id="cmpMarks"></g></g>
+   <circle cx="150" cy="150" r="58" fill="var(--panel)" stroke="var(--line)"/>
+   <text x="150" y="136" text-anchor="middle" font-size="12" fill="#ff9f43" font-family="var(--body)">اتجاه الشروق</text>
+   <text id="cmpRiseC" x="150" y="166" text-anchor="middle" font-size="24" font-weight="700" fill="#ff9f43" font-family="var(--num)">—</text>
+   <path d="M150 -26 L141 -8 L159 -8 Z" fill="var(--gold)"/><line x1="150" y1="-6" x2="150" y2="22" stroke="var(--gold)" stroke-width="3"/>`;
+})();
+function renderCompass(S,lat,lon,sunAz,sunAlt){
+  const r=riseAz(S.dec,lat),q=bearing(lat,lon,KAABA[0],KAABA[1]);
+  const bar=(a,fill)=>{if(a==null)return"";const[x1,y1]=CP(122,a),[x2,y2]=CP(148,a);return`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${fill}" stroke-width="6" stroke-linecap="round"/>`};
+  const[qx,qy]=CP(94,q),[sx,sy]=CP(84,sunAz);
+  let ray="";if(r!=null){const[x1,y1]=CP(62,r),[x2,y2]=CP(122,r);ray=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#ff9f43" stroke-width="2" stroke-dasharray="4 3"/>`}
+  $("cmpRiseC").textContent=r==null?"—":"⁦"+r.toFixed(1)+"°⁩";riseAzNow=r;
+  $("cmpMarks").innerHTML=ray+bar(r,"#ff9f43")+bar(r==null?null:360-r,"var(--night)")+
+    `<rect x="${qx-8}" y="${qy-8}" width="16" height="16" rx="2" fill="#3fbf7f" stroke="var(--sky)" stroke-width="2" transform="rotate(${q} ${qx} ${qy})"/>`+
+    `<circle cx="${sx}" cy="${sy}" r="9" fill="${sunAlt>-0.833?"var(--gold)":"none"}" stroke="${sunAlt>-0.833?"var(--sky)":"var(--muted)"}" stroke-width="2"/>`;
+  const f=a=>a==null?"—":a.toFixed(1)+"°";
+  $("lgSun").textContent=f(sunAz)+(sunAlt>-0.833?"":" (تحت الأفق)");$("lgRise").textContent=f(r);$("lgSet").textContent=f(r==null?null:360-r);$("lgQibla").textContent=f(q);
+}
+function compassFrame(){
+  if(!compassOn)return;
+  if(heading!=null){const d=((heading-shown+540)%360)-180;shown=(shown+d*.2+360)%360;
+    $("cmpCard").setAttribute("transform",`rotate(${(-shown).toFixed(2)} 150 150)`);
+    document.querySelectorAll("#cmp .cl").forEach(el=>el.setAttribute("transform",`rotate(${shown.toFixed(2)} ${el.dataset.x} ${el.dataset.y})`));
+    $("cmpDeg").textContent=Math.round(heading)+"°";
+    $("cmpDir").textContent=dirName(heading)+(compassOffset?" · شمال حقيقي (مُعايَر بالشمس)":headingAbs?" · شمال مغناطيسي":" · اتجاه نسبي: عايِر بالشمس");
+    if(riseAzNow!=null){const dd=((riseAzNow-heading+540)%360)-180,a=Math.abs(dd),n=v=>'<span class="num">'+v.toFixed(1)+'°</span>';
+      $("cmpAim").innerHTML=a<1?"✓ الهاتف موجّه نحو الشروق "+n(riseAzNow):"للتوجيه نحو الشروق: أدِر الهاتف "+(dd>0?"يمينًا ":"يسارًا ")+n(a);
+      $("cmpAim").style.color=a<1?"var(--ok)":"var(--muted)"}
+    const st=$("cmpState");if(compassOffset||headingAbs){st.className="badge ok";st.textContent="تعمل"}else{st.className="badge warn";st.textContent="تحتاج معايرة"}}
+  requestAnimationFrame(compassFrame);
+}
+$("cmpBtn").onclick=async()=>{
+  if(compassOn){compassOn=false;oriStop("compass");$("cmpBtn").textContent="تشغيل البوصلة";$("cmpCal").hidden=true;$("cmpChk").hidden=true;$("cmpCard").setAttribute("transform","");document.querySelectorAll("#cmp .cl").forEach(el=>el.removeAttribute("transform"));$("cmpDeg").textContent="—";$("cmpDir").textContent="البوصلة متوقفة";$("cmpAim").textContent="";const st=$("cmpState");st.className="badge warn";st.textContent="متوقفة";return}
+  if(!window.isSecureContext){$("cmpDir").textContent="البوصلة تحتاج أن تُفتح الصفحة عبر https.";return}
+  if(typeof DeviceOrientationEvent==="undefined"){$("cmpDir").textContent="هذا الجهاز لا يوفّر بوصلة للمتصفح.";return}
+  const granted=await sensorPermission(false); // Safari asks; other browsers may lack or refuse the call yet still deliver events
+  compassOn=true;oriStart("compass");$("cmpBtn").textContent="إيقاف البوصلة";$("cmpCal").hidden=false;$("cmpChk").hidden=false;$("cmpDir").textContent="انتظر قراءة المستشعر… حرّك الهاتف قليلًا.";
+  setTimeout(()=>{if(compassOn&&heading==null)$("cmpDir").textContent=granted?"لم تصل قراءة. قد لا يحتوي الهاتف على مستشعر مغناطيسي، أو أن المتصفح يمنعه.":"لم يُسمح بالوصول إلى البوصلة. اسمح بمستشعرات الحركة في إعدادات المتصفح ثم أعد المحاولة."},4000);
+  requestAnimationFrame(compassFrame);
+};
+const cmpOut=t=>{$("cmpNote").textContent=t};
+$("cmpCal").onclick=()=>calibrateWithSun(sunNow(),cmpOut);
+$("cmpChk").onclick=()=>checkWithSun(sunNow(),cmpOut);
+
+/* ---------- dial & readings ---------- */
+const P=(r,a)=>[150+r*Math.sin(a*rad),150-r*Math.cos(a*rad)];
+function arc(r,a1,a2){const s=P(r,a1),e=P(r,a2),span=((a2-a1)%360+360)%360;return`M${s[0].toFixed(2)} ${s[1].toFixed(2)}A${r} ${r} 0 ${span>180?1:0} 1 ${e[0].toFixed(2)} ${e[1].toFixed(2)}`}
+// country outlines & extreme points from Natural Earth (via datasets/geo-countries), de-facto borders
+// [name, tz, svgPath(300x230), [[lat,lon,x,y] N,S,E,W,centre]]
+const COUNTRIES=[["الجزائر",1,"M92.7 145.5L58.4 122.5L58.5 108.4L67.9 101.4L70.3 101.5L72.1 100.2L75.3 100.8L84.4 99.1L84.7 100.0L86.3 100.0L89.5 95.5L96.7 90.1L103.1 88.1L103.9 85.7L102.3 83.4L101.4 83.5L101.6 81.8L102.9 81.3L103.0 78.7L110.4 77.2L109.9 74.4L124.7 74.3L123.8 73.5L124.4 71.6L126.3 70.2L122.8 67.7L121.6 65.8L122.1 64.5L120.6 62.7L121.1 59.6L119.9 58.1L120.6 54.3L119.4 51.3L120.3 50.3L118.8 49.1L119.7 47.6L115.7 44.1L119.8 43.7L123.9 41.4L126.3 38.2L128.3 37.3L129.9 37.8L131.2 36.1L134.7 37.1L138.5 32.9L147.4 29.5L158.5 29.0L161.4 26.9L166.3 27.2L169.8 25.8L177.9 26.0L182.5 28.5L186.3 26.6L190.4 25.9L192.3 24.0L197.0 26.0L199.6 25.3L199.5 24.0L204.6 25.0L204.4 26.0L205.5 26.5L208.4 25.4L211.7 25.6L212.1 26.6L210.0 27.1L210.2 28.3L207.9 29.7L209.5 30.7L208.5 36.7L209.0 41.8L210.2 42.6L209.0 44.4L208.5 48.6L204.9 50.9L204.3 52.6L202.1 54.1L201.7 56.1L203.9 62.8L207.1 64.2L208.9 66.8L209.3 69.9L215.6 74.4L219.8 93.0L217.8 94.1L221.1 99.2L222.6 104.0L222.1 112.7L223.5 117.1L221.6 122.5L223.2 128.9L222.6 130.4L219.5 131.9L218.6 133.7L224.2 142.2L224.4 146.9L226.2 149.6L227.7 150.8L230.3 149.9L237.8 152.5L241.6 160.4L201.8 186.9L186.8 201.2L165.0 206.0L163.0 204.4L164.3 201.9L163.8 197.5L156.7 195.1L154.9 193.0L153.8 193.6L151.2 192.7L149.3 189.7L145.7 188.3L145.6 184.6L92.7 145.5Z",[[37.0939,6.4624,192.7,24.0],[18.9756,3.3331,165.0,206.0],[23.5174,11.9689,241.6,160.4],[27.2854,-8.6824,58.4,122.5],[28.1489,2.6531,159.0,113.9]]],["المغرب",1,"M36.3 206.0L38.8 203.9L40.9 200.0L57.2 196.7L68.0 191.5L75.9 182.1L85.0 176.8L91.1 170.0L94.8 163.4L99.1 158.1L102.2 151.8L103.1 145.7L101.4 142.6L97.9 140.3L99.3 136.4L98.6 129.9L99.4 125.0L98.6 123.7L102.0 116.4L107.7 109.9L109.3 106.2L109.6 97.8L117.0 91.1L123.3 82.6L124.8 82.7L127.9 79.9L142.1 74.5L144.4 72.5L151.4 69.2L155.3 65.6L165.2 47.0L172.4 26.8L178.2 26.3L181.9 24.0L184.7 31.5L188.2 35.2L193.7 39.1L201.1 41.1L209.7 38.5L209.9 39.7L212.1 39.8L213.8 38.0L215.8 39.3L220.9 40.0L225.4 38.1L227.5 34.6L227.6 38.1L228.8 38.7L228.6 40.3L229.6 41.5L231.6 41.9L229.2 39.0L233.1 42.0L235.9 42.2L237.8 41.1L240.4 42.0L242.0 44.3L249.9 50.1L248.0 53.3L251.2 55.9L249.2 58.2L251.8 64.7L250.3 73.0L252.8 76.3L251.5 80.3L251.7 83.2L255.0 87.2L254.9 89.0L253.9 89.9L256.4 94.2L263.7 99.6L259.8 102.7L258.5 106.8L260.7 107.3L260.4 108.5L235.9 107.6L229.1 108.8L228.0 109.4L230.1 115.0L214.5 118.3L214.3 124.0L211.6 125.1L211.1 128.8L211.7 129.4L213.2 128.7L216.5 133.5L214.5 136.1L214.8 138.9L211.3 140.8L205.2 141.7L201.2 143.4L196.5 148.3L191.7 150.6L186.1 155.1L179.3 165.1L177.5 165.7L175.9 165.1L175.3 163.1L165.6 163.9L157.6 165.2L156.0 166.8L152.7 165.4L149.2 165.4L145.4 168.2L139.7 168.3L120.7 183.0L120.5 206.0L36.3 206.0Z",[[35.9265,-5.4055,181.8,24.0],[27.6667,-13.1776,36.3,206.0],[32.4944,-1.032,263.7,99.6],[27.6667,-13.1776,36.3,206.0],[31.8453,-6.291,165.2,113.9]]],["تونس",1,"M192.2 130.5L191.0 144.4L193.3 147.7L193.0 149.6L178.7 157.2L176.6 160.6L173.0 161.9L172.6 164.8L170.8 167.2L165.8 168.9L162.4 175.3L165.4 184.3L165.6 190.3L157.4 202.8L150.0 206.0L139.6 158.4L124.7 147.2L123.7 139.3L119.5 132.7L111.8 129.2L111.1 123.5L107.0 114.7L107.1 107.8L109.8 104.5L112.7 103.3L114.1 99.0L119.6 96.0L122.5 93.3L124.0 82.2L126.8 77.8L123.9 75.7L124.8 70.2L122.8 62.8L125.3 47.4L121.2 45.8L121.3 45.0L126.8 41.5L127.5 39.7L126.4 38.4L131.3 37.0L130.5 34.4L135.2 33.4L139.7 28.9L143.4 26.8L146.2 26.8L154.7 24.0L157.2 24.4L157.2 25.9L155.3 27.4L156.2 28.9L158.3 28.3L158.6 27.4L156.3 27.0L157.7 26.1L161.3 26.0L165.5 27.9L162.9 28.8L165.0 29.8L163.9 30.9L164.0 32.1L167.5 35.9L166.5 37.4L165.5 36.8L164.2 38.0L165.4 38.3L165.9 37.5L167.0 39.3L168.7 39.8L171.2 39.1L172.6 36.0L175.8 35.5L179.3 31.6L182.5 30.8L184.2 36.6L181.9 38.2L177.2 46.8L171.9 48.8L170.3 55.5L173.4 62.4L176.0 64.3L177.7 64.0L178.0 66.1L182.3 67.7L181.7 69.8L183.2 71.0L182.3 75.4L184.8 78.4L182.8 80.0L181.8 83.1L179.7 85.1L178.7 89.2L173.5 93.4L172.9 95.6L169.3 96.9L168.2 98.7L166.3 99.0L162.9 101.2L160.3 105.2L161.7 110.9L167.2 117.2L170.6 118.6L175.4 117.0L175.8 119.7L174.5 121.2L175.9 122.9L179.5 121.3L180.1 118.9L182.3 119.3L183.8 121.3L183.6 125.8L187.7 127.8L184.3 127.2L185.2 129.7L190.3 130.4L188.9 128.5L192.2 130.5ZM181.2 113.6L182.7 114.7L180.5 117.3L180.2 116.5L179.0 118.8L177.7 116.5L175.9 116.8L175.8 112.5L179.9 112.2L181.2 113.6ZM180.7 92.8L183.8 92.7L182.6 93.7L180.7 92.8ZM187.1 89.8L187.7 90.9L184.2 92.6L186.8 88.4L187.9 89.0L187.1 89.8Z",[[37.3452,9.7446,154.7,24.0],[30.2289,9.5197,150.0,206.0],[32.4655,11.5641,193.4,148.8],[33.8939,7.4798,106.6,112.3],[34.1194,9.5546,150.7,106.5]]],["ليبيا",2,"M81.9 24.0L91.9 28.6L97.6 29.0L103.9 27.7L106.5 29.0L113.8 30.2L117.2 32.8L125.7 34.4L127.9 37.4L127.8 40.2L129.4 44.2L132.6 47.8L136.0 49.3L146.7 50.6L157.5 54.0L161.8 56.1L167.1 60.7L171.9 62.8L178.5 60.7L184.3 53.9L184.9 50.1L182.1 42.9L184.0 37.4L189.8 32.3L195.6 29.4L200.0 29.2L202.5 27.3L208.7 27.1L220.1 31.2L220.6 33.4L219.8 35.3L222.6 37.5L222.4 36.7L226.9 37.3L231.9 39.6L239.5 39.3L242.9 40.4L244.6 44.2L240.9 48.4L242.6 55.9L239.0 64.4L242.5 77.2L242.4 199.4L230.6 199.4L230.6 206.0L135.3 153.5L114.2 164.5L105.4 157.0L87.4 152.5L81.9 141.9L72.5 138.8L68.8 139.8L67.0 138.4L66.2 136.1L64.3 134.7L64.0 128.4L56.5 117.3L57.8 114.8L62.2 112.5L62.9 108.3L61.9 107.3L60.6 102.1L63.2 94.7L61.3 89.3L61.9 77.9L60.0 71.5L55.4 64.7L62.4 61.6L66.2 56.6L67.2 54.1L65.2 47.3L67.1 44.0L69.9 43.1L71.2 40.3L73.1 39.6L74.3 37.9L82.4 33.9L81.2 31.2L81.9 24.0Z",[[33.1812,11.5051,81.9,24.0],[19.4961,23.9813,230.6,206.0],[31.6631,25.1563,244.6,44.2],[30.1171,9.2865,55.4,64.7],[27.0303,18.0096,159.4,105.8]]],["مصر",2,"M203.8 116.4L203.1 115.7L203.8 116.4ZM210.1 38.1L212.8 47.5L216.2 55.0L218.8 64.8L216.3 68.2L214.4 79.0L210.8 86.8L211.2 93.3L207.5 96.8L208.2 98.0L199.9 92.4L196.6 87.3L190.9 82.1L190.1 74.2L185.2 69.5L184.0 66.2L182.6 64.9L182.3 65.5L181.9 60.2L180.4 58.5L180.0 55.0L179.9 56.3L178.3 56.5L178.8 57.7L176.0 62.9L180.0 67.1L181.4 72.0L180.8 74.6L183.8 78.2L184.9 82.0L187.1 83.7L191.3 90.2L196.4 94.8L197.0 96.8L195.0 96.2L196.5 97.4L197.0 99.5L196.5 98.9L195.4 99.5L198.7 105.3L201.2 107.1L201.2 109.4L203.8 113.7L202.9 118.2L204.1 119.0L209.6 130.5L213.1 135.7L223.4 157.4L223.1 158.8L227.3 162.9L229.0 166.2L229.2 165.6L230.9 167.9L233.1 168.5L234.0 170.1L229.3 168.7L228.8 169.8L228.9 177.7L232.4 188.3L233.5 189.5L233.4 188.5L235.6 192.0L241.3 193.9L244.9 199.2L252.6 204.6L252.4 206.0L160.8 206.0L161.7 202.6L160.6 201.6L157.6 206.0L52.3 206.0L52.3 70.6L50.3 64.6L49.4 57.3L47.4 51.8L51.1 45.8L52.5 40.4L50.6 35.6L50.1 29.8L54.1 24.8L55.1 24.0L55.8 26.4L59.4 26.9L68.9 24.8L91.6 29.2L93.7 32.2L97.3 33.0L100.6 31.8L101.8 34.5L110.2 34.8L116.7 37.2L120.3 39.6L123.5 39.4L128.3 37.2L137.8 30.1L139.6 31.3L139.4 32.3L141.5 31.9L141.5 31.1L139.7 31.1L141.9 29.8L142.4 27.0L143.4 28.0L142.7 26.8L145.7 27.6L153.0 25.3L146.0 28.4L149.0 29.1L150.1 28.0L153.1 28.1L154.0 26.6L155.5 27.1L155.3 26.2L153.1 25.4L155.1 24.9L162.8 28.0L169.3 26.6L170.7 28.8L173.6 30.8L170.2 28.9L168.4 26.3L167.7 27.0L168.2 28.3L167.3 28.0L168.2 28.5L167.4 28.7L167.9 29.7L166.9 29.6L166.4 31.0L168.7 31.6L169.0 32.8L170.9 32.3L170.5 34.0L172.1 35.4L171.9 34.6L175.0 33.8L175.0 31.4L173.8 30.8L175.8 31.3L180.4 35.2L185.9 33.4L181.5 35.4L182.6 35.6L185.9 34.3L187.3 35.3L188.2 33.8L186.3 34.4L188.9 32.7L189.3 35.5L193.9 33.4L198.0 34.2L207.3 30.4L210.1 38.1ZM204.8 103.1L202.4 101.8L204.8 103.1ZM214.3 94.4L212.6 94.2L212.2 92.9L214.3 94.4ZM194.7 33.5L191.6 32.3L194.7 33.5ZM191.2 32.2L188.8 32.1L186.0 33.6L188.8 31.8L191.2 32.2Z",[[31.6565,25.1509,55.1,24.0],[21.9944,31.2484,157.6,206.0],[22.0299,36.8992,252.6,205.3],[30.1442,24.6883,47.4,52.5],[26.4929,29.8612,134.3,121.3]]],["السودان",2,"M54.9 175.9L56.1 171.5L55.6 169.5L53.7 169.4L50.7 166.3L51.7 160.4L49.7 161.0L50.0 159.2L48.5 155.2L49.5 153.2L46.4 151.4L45.1 152.7L42.9 152.8L41.3 150.7L43.3 146.7L47.2 143.5L44.7 137.5L46.5 135.1L50.8 132.7L49.3 131.0L48.4 127.2L52.5 125.3L52.3 123.0L56.1 118.4L55.5 113.8L57.9 111.6L69.4 111.4L69.4 54.0L82.3 53.9L82.3 27.1L163.5 27.1L165.8 24.0L166.6 24.7L165.9 27.1L188.5 27.1L193.4 31.0L199.1 30.2L200.2 27.1L236.5 27.1L236.5 31.8L242.0 39.7L241.0 40.2L240.4 39.2L241.5 39.6L239.6 37.5L239.1 39.9L240.9 46.3L240.2 49.2L241.1 59.6L243.6 69.2L245.0 71.2L246.7 70.8L247.8 72.3L250.0 72.9L252.5 75.2L251.9 76.1L252.9 77.4L254.9 76.7L253.7 77.9L256.0 77.8L258.7 80.6L254.0 87.2L252.5 86.9L251.9 87.8L251.4 86.9L244.4 90.0L243.2 93.8L237.6 93.4L238.0 96.4L236.4 100.8L237.4 103.9L233.7 111.4L233.2 115.1L230.5 119.3L231.8 131.0L230.1 139.9L228.1 143.1L226.8 147.5L226.6 151.7L221.0 152.6L216.2 161.1L213.0 163.8L213.0 167.5L211.4 171.4L211.5 176.1L210.0 178.5L208.9 179.1L206.6 176.4L202.7 180.7L203.3 185.3L200.0 195.6L197.6 195.0L198.8 190.2L198.1 185.9L191.1 179.6L188.0 178.4L188.5 177.0L187.3 166.8L188.9 158.6L182.7 158.5L182.9 161.4L174.3 161.4L177.7 165.4L177.7 170.7L178.8 173.7L172.5 179.5L168.9 185.4L162.4 191.5L157.2 192.0L147.5 184.7L142.3 187.5L142.3 189.4L140.6 191.5L136.1 192.8L133.3 194.6L132.2 196.0L132.4 197.4L122.0 197.3L120.1 193.7L109.5 193.6L103.6 195.3L94.3 185.9L93.3 182.6L83.6 184.4L82.3 188.7L79.9 190.7L79.9 194.7L78.4 196.7L76.9 203.2L71.1 206.0L63.0 205.3L64.0 202.1L62.3 201.5L62.8 199.4L64.9 198.0L65.0 190.1L60.4 182.4L56.7 179.1L54.9 175.9Z",[[22.227,31.4233,165.8,24.0],[8.6816,24.114,71.1,206.0],[18.0139,38.6039,258.7,80.6],[12.7937,21.8094,41.3,150.7],[15.9802,29.9354,146.5,107.9]]],["موريتانيا",0,"M180.7 24.0L233.0 57.2L209.0 57.2L222.1 180.0L225.8 183.1L223.6 195.0L171.7 195.0L171.6 192.0L170.3 193.6L170.7 195.8L162.0 196.9L158.5 195.8L153.1 195.9L150.5 200.7L143.8 193.4L142.2 192.8L141.0 194.3L139.5 194.3L137.9 199.6L138.2 203.6L134.9 206.0L130.6 204.4L129.2 201.9L123.8 198.5L124.6 198.0L122.8 194.8L121.1 195.0L120.8 193.5L119.0 193.1L118.0 188.7L116.3 186.2L115.5 186.3L115.7 185.4L113.2 186.1L112.4 184.9L111.0 185.9L109.2 184.3L109.0 182.7L103.2 178.1L96.4 178.4L95.5 177.6L94.7 178.5L93.7 178.0L93.5 179.2L88.9 179.2L86.1 180.7L78.0 180.1L76.4 184.2L75.4 184.8L74.3 190.4L74.5 182.8L80.6 165.2L81.2 156.6L78.9 144.4L74.4 138.6L76.8 138.1L77.8 136.5L76.4 137.4L76.7 136.3L75.7 138.2L75.3 137.5L78.5 132.6L78.3 131.1L77.4 131.2L78.6 129.6L78.1 127.7L78.9 126.3L75.3 120.2L76.1 119.9L74.5 118.9L74.3 121.5L72.6 119.8L69.2 112.8L67.9 114.7L67.4 118.5L68.5 110.4L122.1 110.3L120.2 88.8L122.1 85.9L127.4 82.2L135.5 79.5L135.6 42.7L180.6 42.6L180.7 24.0ZM76.5 132.3L75.8 135.4L75.4 134.2L76.5 132.3ZM77.3 133.6L76.3 135.4L77.3 133.6Z",[[27.2854,-8.6824,180.7,24.0],[14.7344,-12.0704,134.9,206.0],[24.9951,-4.8216,233.0,57.2],[20.8747,-17.0812,67.0,117.0],[20.2562,-10.3434,158.2,125.9]]],["السعودية",3,"M210.1 109.2L211.9 111.3L214.9 110.6L215.3 111.9L216.3 110.5L217.4 111.1L215.0 114.3L218.1 114.9L218.4 116.9L228.5 130.1L255.4 133.8L256.2 132.8L261.0 141.2L254.0 164.1L222.4 175.7L191.4 180.5L182.2 185.5L176.2 193.4L174.5 197.7L171.7 199.3L169.7 199.2L166.9 195.5L162.8 196.1L153.4 195.1L150.6 193.8L139.9 194.1L137.5 195.2L132.2 192.7L129.6 195.0L130.5 195.6L129.1 197.7L129.7 202.6L128.7 202.5L128.2 204.1L125.6 206.0L125.1 202.5L123.0 200.1L123.0 198.7L121.0 196.6L121.1 198.4L120.5 193.5L115.0 189.1L111.9 184.6L111.3 181.7L109.0 179.1L108.6 174.8L107.5 174.2L106.2 169.8L104.2 168.6L104.1 166.6L103.1 166.8L101.8 164.5L97.1 160.8L93.7 160.0L87.5 151.3L86.5 148.9L87.5 147.8L86.8 143.9L85.0 140.9L85.7 140.9L87.2 136.3L86.4 136.7L85.8 132.1L83.6 129.4L83.6 127.7L79.9 120.3L74.5 116.2L74.6 115.5L73.7 116.1L69.1 113.6L69.4 112.7L66.2 108.0L67.3 107.8L67.2 104.3L63.9 98.8L61.5 97.3L61.4 94.5L59.5 93.5L54.4 84.3L45.3 71.5L45.8 71.0L40.5 70.0L39.5 71.3L39.0 70.3L41.5 65.5L43.0 56.0L54.8 57.8L59.1 54.4L61.7 50.2L69.6 48.6L71.4 44.7L74.9 42.7L64.2 31.3L85.3 25.5L87.3 24.0L100.1 26.1L118.1 36.0L145.6 57.7L174.5 60.1L177.0 65.5L185.7 65.8L185.4 67.2L186.1 66.9L187.4 71.1L188.8 71.5L188.3 72.1L189.8 73.6L188.7 74.9L189.8 75.2L189.3 76.1L193.6 76.9L194.3 78.0L192.3 78.1L193.8 78.4L193.4 79.4L194.3 79.2L195.0 81.5L197.1 80.9L198.4 83.7L203.2 87.1L201.4 86.6L201.9 89.0L203.9 91.0L203.1 94.3L201.9 92.4L201.5 94.7L202.6 94.9L204.3 99.0L203.1 98.2L206.5 101.2L207.5 105.7L210.1 109.2ZM119.2 202.1L119.2 203.5L118.2 202.3L116.8 202.5L114.7 199.9L116.3 201.6L117.7 202.0L117.9 200.9L119.2 202.1ZM116.4 201.1L115.8 198.6L117.1 200.4L117.3 201.5L116.4 201.1ZM197.0 79.1L198.3 79.5L195.8 79.8L197.0 79.1ZM64.0 101.5L63.5 102.1L62.2 100.6L64.0 101.5ZM62.4 100.5L61.4 99.7L62.4 100.5ZM61.3 99.7L59.3 98.6L59.8 98.2L61.3 99.7ZM59.8 97.8L60.3 96.3L60.5 98.1L59.8 97.8Z",[[32.1213,39.1577,87.3,24.0],[16.371,42.7895,125.6,206.0],[21.979,55.6376,261.0,141.2],[28.1128,34.5728,39.0,70.3],[24.1223,44.5369,144.0,116.4]]],["اليمن",3,"M222.2 39.9L237.8 77.0L239.5 77.6L245.5 91.3L233.8 95.5L228.8 99.5L225.9 105.6L226.3 107.9L227.3 108.6L227.4 113.6L220.8 115.8L219.9 117.2L215.9 118.3L215.8 119.7L209.3 122.1L192.3 126.0L184.4 130.5L179.4 130.6L167.4 134.7L163.4 137.6L161.6 137.5L159.7 141.8L153.2 147.9L142.6 149.6L141.5 148.2L138.9 147.6L131.1 151.6L125.9 156.4L115.7 159.1L111.3 161.3L101.5 161.2L89.6 163.2L84.0 169.2L78.0 171.5L76.8 175.9L75.1 175.4L76.3 175.0L75.9 173.8L72.9 175.0L72.9 175.7L73.9 175.7L73.1 176.6L71.0 175.7L69.8 176.3L69.1 175.0L67.4 174.6L63.3 177.9L53.4 179.5L52.3 178.3L46.2 176.0L43.4 177.6L43.5 174.0L38.3 164.5L39.7 157.9L39.4 154.9L35.6 147.0L32.7 137.7L34.0 139.2L34.1 137.1L31.1 129.6L32.4 131.2L32.2 128.2L30.7 124.1L27.9 122.5L25.9 122.9L25.4 121.8L26.9 121.7L27.5 119.1L27.2 120.3L29.2 122.5L29.5 119.6L27.1 111.8L30.1 107.1L29.1 97.2L34.3 93.6L35.3 90.6L37.3 90.8L38.0 87.9L35.9 85.4L36.0 81.6L36.8 78.9L38.8 78.0L37.0 76.3L39.9 73.4L42.2 72.1L44.1 72.3L48.9 75.8L52.2 75.7L52.8 76.9L54.6 75.4L56.3 76.0L57.7 74.6L79.0 74.1L84.6 76.7L103.4 78.6L111.5 77.4L117.0 84.4L121.0 84.6L126.6 81.5L130.0 73.4L142.0 58.4L160.4 49.0L222.2 39.9ZM244.8 188.7L245.1 189.7L243.3 188.9L244.8 188.7ZM228.7 188.1L230.8 188.2L230.8 189.2L227.7 189.1L224.0 187.4L228.7 188.1ZM274.5 180.6L276.0 180.5L274.0 181.9L269.8 183.0L267.6 184.8L259.0 185.9L255.7 185.2L250.1 180.6L251.8 180.3L252.0 178.2L254.5 176.9L257.4 177.1L261.4 179.4L262.0 178.4L264.8 178.4L267.2 177.2L274.5 180.6ZM27.6 154.5L29.0 153.7L29.2 154.3L27.0 156.2L27.6 154.5ZM28.5 147.5L29.4 148.4L29.0 150.6L27.1 148.6L28.5 147.5ZM25.9 117.4L24.8 118.5L25.7 118.6L24.5 121.2L24.3 118.5L25.9 117.4Z",[[18.9956,51.9786,222.2,39.9],[12.1114,53.3103,250.2,190.1],[12.5502,54.5403,276.0,180.5],[15.2944,42.5457,24.0,120.7],[15.9054,47.5906,130.0,107.3]]],["عُمان",4,"M156.1 43.7L157.5 44.9L155.6 45.9L155.2 45.1L156.1 43.7ZM152.9 30.1L155.2 26.3L155.2 27.3L158.6 27.2L156.9 27.1L157.9 24.0L159.6 25.0L160.2 24.5L158.5 26.2L160.0 26.8L159.0 27.1L159.9 28.5L158.3 27.5L157.2 28.0L157.4 29.1L157.9 28.5L157.9 29.3L159.8 29.4L158.1 30.5L159.4 32.2L158.2 32.6L156.4 38.2L154.1 37.4L154.7 30.9L154.4 29.8L152.9 30.1ZM158.2 50.3L162.2 59.3L167.9 66.4L171.5 69.4L184.3 73.8L188.6 73.9L191.8 75.6L196.4 75.2L197.7 76.7L199.5 77.1L205.2 86.3L207.7 88.3L208.8 91.1L212.6 95.4L214.6 95.1L216.5 96.6L216.6 95.9L218.0 96.4L217.8 101.5L209.7 116.3L204.6 119.4L198.1 127.8L197.9 128.9L198.9 129.0L196.6 131.3L195.3 135.5L194.0 136.6L189.8 135.7L190.9 132.3L189.9 131.8L187.9 132.7L187.6 134.3L185.5 135.8L185.7 137.1L183.8 138.4L183.1 143.7L180.9 148.4L183.1 162.1L181.2 163.0L172.5 163.6L165.6 166.7L162.7 170.2L161.3 177.9L157.7 181.8L152.1 181.7L141.9 183.6L138.1 189.3L139.4 191.5L138.7 194.9L134.6 199.1L130.5 200.2L127.1 198.6L118.3 199.1L116.5 201.0L112.5 201.8L110.1 203.8L105.3 204.3L101.0 206.0L96.0 194.3L94.6 193.8L81.7 162.0L133.8 143.4L145.2 106.3L137.4 92.8L138.1 85.0L143.5 72.9L142.1 69.3L151.5 67.0L150.4 64.4L147.3 64.3L148.2 62.2L147.4 58.1L148.4 56.5L147.9 52.6L148.6 51.4L150.4 50.3L151.6 50.7L152.0 52.5L150.8 52.3L153.3 54.9L158.2 50.3ZM152.5 188.9L153.2 189.6L151.1 190.0L152.5 188.9ZM202.0 131.6L202.8 133.8L197.6 140.1L197.6 136.4L199.9 134.6L201.8 130.3L202.0 131.6Z",[[26.386,56.3638,157.9,24.0],[16.6424,53.0903,101.0,206.0],[22.4453,59.8446,218.3,97.6],[18.9956,51.9786,81.7,162.0],[20.6019,56.0927,153.1,132.0]]],["الإمارات",4,"M260.5 47.6L263.5 48.8L264.9 52.9L264.4 60.8L265.6 64.1L264.5 77.6L265.5 81.8L262.9 82.1L261.9 86.2L258.7 88.9L255.4 89.9L253.3 94.0L251.9 94.8L248.7 93.6L247.2 90.0L245.5 88.3L245.3 86.9L246.1 86.6L248.6 88.0L247.4 82.9L246.1 82.1L242.2 82.3L237.5 86.6L237.2 95.3L238.4 99.4L235.6 103.9L236.3 110.9L238.1 112.8L237.9 115.4L235.4 121.2L239.0 122.1L242.5 121.1L243.9 121.7L247.0 129.0L237.9 132.9L235.7 131.8L230.2 132.0L221.1 135.3L221.3 137.0L224.6 139.9L225.0 145.4L222.1 150.4L220.5 156.9L217.2 161.3L214.6 171.5L210.0 179.6L208.3 186.3L208.1 201.6L204.9 205.9L81.9 189.3L34.9 128.0L34.4 119.8L35.5 116.0L34.7 114.1L35.6 113.0L37.1 115.4L37.6 121.4L38.9 121.1L39.4 118.7L40.7 121.6L41.8 121.3L43.5 118.0L44.5 119.5L44.2 125.3L46.0 133.3L50.0 133.8L51.7 135.2L51.8 134.0L52.9 133.8L55.9 133.9L58.3 135.3L62.6 135.1L71.5 132.9L82.7 125.3L83.0 122.8L83.9 122.3L87.8 125.9L94.8 125.3L100.6 126.1L103.4 124.6L106.3 126.9L108.3 126.1L110.2 126.9L111.0 126.8L110.0 124.6L111.1 124.4L115.3 128.1L124.5 127.0L126.1 128.4L128.1 128.2L131.4 130.9L134.7 130.8L136.9 129.6L145.3 129.9L148.8 127.9L157.0 125.7L160.1 122.6L163.3 121.7L166.6 119.1L169.5 119.9L171.6 117.9L174.4 112.9L174.3 110.9L175.1 110.5L174.4 109.8L177.1 110.5L175.8 108.3L178.7 109.8L178.6 108.4L175.1 107.6L171.2 105.1L172.8 104.0L173.5 105.1L174.4 103.3L176.9 107.1L178.1 106.9L177.1 106.1L179.1 106.5L181.7 101.8L180.7 100.6L183.3 98.2L182.0 93.9L185.1 91.0L187.3 91.6L188.3 90.4L187.6 89.6L201.5 81.0L201.3 79.9L203.1 79.7L212.7 66.9L214.4 68.8L213.6 70.4L214.9 70.0L213.7 65.7L216.6 63.6L216.7 61.7L217.7 61.8L220.2 58.9L221.0 59.6L221.8 58.9L225.6 50.1L226.4 49.8L225.5 52.7L229.2 52.4L230.7 49.1L235.6 44.8L239.6 43.0L245.2 37.2L244.1 39.7L244.9 39.9L245.5 36.7L248.6 33.2L249.1 31.4L247.5 32.8L250.9 24.7L255.0 24.1L256.0 27.2L255.3 34.4L253.8 37.3L255.4 40.3L253.9 42.0L254.1 45.3L257.0 48.1L260.5 47.6ZM259.8 67.5L260.3 65.8L260.7 67.2L259.8 67.5ZM134.7 125.0L133.3 124.7L134.0 123.5L137.8 121.2L140.4 121.2L143.8 118.8L144.6 121.0L148.9 122.7L149.4 124.2L148.8 125.4L145.6 125.9L143.3 124.0L143.2 125.3L140.3 126.5L134.7 125.0ZM160.3 121.4L156.5 119.0L156.7 116.5L157.7 116.1L160.2 118.7L160.3 121.4ZM82.7 115.2L84.4 113.7L85.6 114.0L86.4 116.2L83.5 120.0L81.8 117.2L82.7 115.2ZM118.6 119.5L116.4 118.1L115.9 118.9L112.1 118.8L112.3 117.5L114.7 117.6L118.9 115.6L120.7 116.5L120.5 114.8L123.1 111.6L124.6 113.3L124.3 115.3L119.7 117.6L118.6 119.5ZM169.5 110.2L167.2 109.5L167.2 108.6L170.2 105.8L170.2 107.9L173.7 110.9L169.5 110.2ZM163.9 117.8L161.8 118.3L159.9 116.7L160.0 115.6L162.3 114.5L163.9 117.8ZM166.8 113.7L167.3 114.9L166.0 116.8L164.5 114.1L166.1 114.6L165.1 113.1L166.8 113.7ZM70.0 104.9L71.4 106.9L70.2 108.3L68.7 107.1L70.0 104.9Z",[[26.0748,56.1513,254.4,24.0],[22.6209,55.1053,204.2,206.0],[25.3135,56.3836,265.6,64.1],[24.2562,51.5693,34.4,119.8],[23.9078,54.3037,165.7,138.2]]],["قطر",3,"M111.4 184.8L113.3 184.5L116.0 182.1L116.7 179.2L115.8 168.4L110.2 155.5L111.4 148.1L108.1 145.5L106.2 134.8L107.0 132.7L106.2 125.3L107.0 119.1L105.5 108.2L106.8 101.1L105.5 99.7L108.3 96.0L110.3 95.7L112.7 100.1L112.7 102.3L115.4 102.8L113.4 96.2L113.9 90.1L112.5 88.2L109.0 87.2L110.2 85.7L114.4 84.4L115.3 82.0L116.4 81.9L118.4 84.1L117.6 92.3L118.9 95.1L120.7 95.4L121.8 88.0L123.0 86.8L125.9 88.0L128.8 82.5L123.3 84.0L121.2 83.1L119.6 78.5L120.3 73.1L121.8 71.2L121.0 66.1L122.4 66.5L124.2 63.7L125.5 65.1L125.9 67.8L128.3 65.2L128.1 61.5L127.4 62.3L125.9 60.6L128.8 51.7L129.5 44.3L131.6 46.0L133.9 39.1L136.0 36.2L145.7 32.2L149.2 26.3L151.1 27.0L156.9 24.0L165.1 28.4L166.8 30.3L166.8 37.8L169.8 39.6L171.0 46.0L172.6 47.4L183.7 48.3L188.6 52.0L190.5 55.8L192.2 69.7L191.1 71.6L189.0 69.2L187.1 72.1L188.2 74.0L190.1 72.4L191.8 75.0L190.4 77.6L188.3 78.4L187.9 75.5L183.0 77.8L187.3 80.5L187.6 84.2L183.0 86.3L181.6 85.6L181.6 93.5L179.6 96.6L184.2 105.9L183.7 118.4L184.4 122.2L191.8 123.7L193.6 126.9L194.5 140.3L193.4 152.0L193.9 153.4L191.4 161.2L186.5 167.4L185.5 170.2L182.5 172.4L179.7 183.3L178.0 185.4L176.7 192.4L170.3 197.4L169.8 200.1L166.1 204.9L164.9 203.2L166.8 197.4L166.0 196.2L160.5 196.3L159.7 194.3L153.8 196.4L153.2 198.5L146.3 204.1L140.9 206.0L128.9 205.1L123.8 202.9L118.9 197.3L111.4 184.8Z",[[26.1601,51.2512,156.9,24.0],[24.5599,51.0389,135.1,206.0],[25.1372,51.6165,194.5,140.3],[25.4196,50.751,105.5,108.2],[25.3131,51.1868,150.3,120.3]]],["الكويت",3,"M197.2 36.1L200.0 42.1L200.7 51.6L202.0 55.5L207.8 65.3L210.5 65.2L214.6 75.6L220.8 86.3L220.4 88.7L218.1 89.0L211.2 84.9L204.9 83.7L199.0 84.7L193.4 89.9L187.2 93.4L182.9 97.3L178.5 103.7L173.9 105.9L172.5 109.4L181.4 108.4L186.0 106.7L187.4 107.5L184.5 109.5L183.9 112.5L186.3 114.2L188.1 114.2L192.2 112.7L192.9 110.0L194.4 109.3L196.3 109.9L201.0 105.9L205.0 110.5L208.9 111.8L212.6 111.0L212.1 121.8L216.0 133.9L218.5 149.7L225.4 161.2L226.9 162.7L230.8 164.0L230.6 170.4L235.8 179.7L242.4 181.6L241.0 185.4L241.7 189.5L239.6 187.9L239.6 189.5L241.0 190.4L239.8 191.7L238.2 191.1L238.2 193.6L239.1 194.1L241.7 192.0L242.8 200.2L246.4 205.2L168.8 206.0L168.0 202.9L161.6 197.2L160.0 194.6L157.7 187.6L156.8 178.4L151.2 162.9L145.1 152.4L53.6 140.6L71.8 120.2L78.2 109.5L86.2 100.0L89.2 92.1L96.8 79.6L98.8 75.2L99.9 68.8L103.6 61.9L112.3 40.0L115.7 35.0L121.0 31.4L137.4 24.7L169.4 24.0L175.2 25.1L197.2 36.1ZM236.8 97.9L241.9 102.3L242.8 106.7L234.6 102.1L229.8 101.8L229.9 98.7L231.0 96.9L236.8 97.9ZM238.2 69.2L233.2 76.7L229.5 80.1L225.7 82.0L221.3 81.5L218.9 78.5L211.1 62.4L207.1 58.6L214.0 54.1L214.6 50.1L211.1 49.4L212.1 47.7L216.0 49.4L218.6 49.5L219.4 48.7L218.8 46.9L222.1 45.1L222.5 44.1L220.9 43.0L217.4 43.0L216.7 38.9L214.3 38.4L216.0 36.6L218.9 35.9L221.6 37.3L237.4 59.8L238.9 64.0L238.2 69.2ZM210.5 35.0L205.6 38.8L203.6 37.7L203.4 36.9L208.0 32.6L213.6 32.2L213.2 33.4L210.5 35.0Z",[[30.0982,47.4158,143.2,24.0],[28.5335,47.6681,168.8,206.0],[28.5405,48.4328,246.4,205.2],[29.0957,46.5324,53.6,140.6],[29.34,47.5946,161.4,112.2]]],["العراق",3,"M170.1 29.1L170.1 30.5L172.4 31.9L171.3 36.8L174.3 37.9L175.3 39.5L174.3 42.4L176.0 45.1L178.8 45.3L180.8 52.2L180.3 54.2L184.3 54.2L188.1 58.3L193.8 57.2L195.7 58.6L198.7 58.4L197.1 60.3L192.8 61.2L192.1 65.2L194.9 69.0L194.6 70.9L195.8 71.3L195.5 73.6L192.9 74.7L191.1 74.1L190.0 78.1L188.3 78.0L188.1 79.5L186.6 80.2L185.9 82.1L187.3 85.8L183.6 85.0L183.6 87.1L182.1 88.2L182.9 90.5L184.6 91.1L184.4 94.9L181.4 98.5L183.3 99.3L187.9 107.0L190.6 106.0L191.4 107.7L190.0 109.0L192.3 109.1L195.6 114.1L195.8 116.1L193.3 117.5L194.9 118.5L194.5 120.8L197.7 120.7L201.5 122.2L212.7 131.3L215.9 131.1L218.6 133.0L218.4 134.6L220.4 137.0L220.1 138.4L221.6 139.4L226.3 146.0L223.5 154.7L223.4 163.7L229.6 163.8L229.6 175.3L231.8 175.7L233.0 178.4L235.0 178.6L236.9 181.1L236.4 182.3L237.7 185.5L239.6 186.7L236.9 186.8L231.6 184.5L228.8 185.4L228.2 183.1L228.4 185.6L223.4 183.3L217.6 183.5L214.7 184.7L213.1 186.3L210.3 193.8L205.8 201.4L202.5 205.3L199.3 206.0L168.8 203.0L120.8 161.8L90.6 143.4L67.2 139.1L69.9 136.3L68.8 134.0L65.0 134.5L64.1 131.3L65.6 130.8L60.4 111.7L95.5 90.6L100.5 89.1L104.9 80.5L104.8 70.7L105.9 65.2L107.8 61.7L107.6 57.9L105.5 52.8L106.2 46.3L108.2 42.8L116.6 40.6L126.4 30.9L126.0 29.8L129.7 29.0L132.6 24.4L134.0 24.0L136.6 25.2L139.9 24.1L146.6 26.9L152.6 27.8L155.9 25.4L157.7 25.4L160.4 27.0L160.7 28.5L159.4 30.3L161.3 32.9L162.4 31.3L167.3 28.3L170.1 29.1Z",[[37.3755,42.7805,133.8,24.0],[29.0631,46.3575,199.3,206.0],[29.9466,48.5593,239.6,186.7],[33.3717,38.7745,60.4,111.7],[33.0398,43.745,151.4,118.9]]],["سوريا",3,"M51.8 190.3L55.7 183.1L54.6 177.5L53.4 177.0L54.0 174.2L52.2 171.2L53.2 169.7L52.0 168.9L53.4 168.0L53.7 166.3L56.7 164.3L57.1 161.9L60.1 160.4L59.9 159.4L56.7 157.8L57.5 155.3L60.6 151.4L63.2 150.2L64.0 150.9L66.0 150.1L69.7 151.1L70.0 149.9L67.1 148.1L67.7 146.7L70.7 143.1L73.2 142.8L77.1 137.5L75.8 135.2L76.4 133.8L74.5 131.9L74.7 129.4L72.0 126.8L69.1 126.8L68.6 126.1L70.5 124.6L70.7 123.1L72.1 123.0L72.2 121.9L70.0 121.9L68.3 119.8L66.9 122.0L58.2 121.1L55.1 111.2L56.1 107.6L55.7 104.5L57.9 101.2L56.5 98.0L56.6 93.3L53.6 89.9L52.2 90.1L52.4 88.8L50.8 87.3L52.5 86.2L52.2 84.2L54.3 81.3L53.1 77.6L55.2 77.5L56.4 75.1L58.5 74.8L59.2 76.9L63.8 78.6L64.9 73.9L67.1 73.6L67.9 72.1L69.7 72.3L70.2 63.8L72.5 64.9L73.4 63.9L78.9 63.8L78.4 61.0L76.3 60.0L76.8 58.5L74.9 54.7L78.1 42.0L87.8 44.7L89.4 46.5L89.3 48.8L90.5 49.6L92.0 48.5L96.1 48.2L102.2 49.1L108.4 45.5L113.3 44.5L125.4 39.1L133.0 41.0L140.3 46.9L149.5 46.7L155.6 48.1L171.3 45.2L184.0 40.0L190.7 35.7L199.4 32.1L205.0 31.3L214.1 33.4L222.4 33.1L238.2 29.4L244.2 24.0L244.6 25.3L246.6 25.4L248.3 27.1L247.9 29.6L249.2 33.5L233.3 49.7L219.6 53.4L216.4 59.2L215.2 69.9L218.7 78.4L219.0 84.6L215.9 90.5L214.1 99.6L214.2 115.9L207.1 130.1L198.9 132.7L141.8 167.6L83.5 205.9L70.6 203.6L64.4 198.2L61.0 198.6L59.2 193.6L57.7 193.5L57.4 192.3L51.8 190.3Z",[[37.3249,42.2112,244.2,24.0],[32.313,36.8066,83.1,206.0],[37.0622,42.3772,249.2,33.5],[35.5759,35.7234,50.8,87.5],[35.023,38.5046,133.7,107.6]]],["الأردن",3,"M93.9 54.0L99.7 51.1L104.4 52.7L106.2 53.6L106.7 55.1L108.4 55.2L108.5 57.2L110.8 61.2L114.9 60.7L122.7 67.2L138.3 70.1L211.5 24.0L222.0 62.1L219.1 63.0L221.0 69.4L221.6 70.3L228.7 68.3L230.8 73.1L218.5 83.9L144.0 105.9L163.4 126.9L182.0 149.0L169.6 156.3L163.0 171.0L135.4 177.1L126.1 192.7L109.9 206.0L69.2 199.0L71.0 191.7L69.5 189.9L69.6 188.8L72.9 177.6L74.3 169.3L76.5 165.4L75.8 160.1L77.1 155.0L76.3 152.0L78.8 143.9L82.9 134.9L83.1 132.0L85.4 128.8L87.4 122.7L85.8 116.0L88.0 109.8L89.0 99.3L91.9 93.9L90.6 81.2L92.4 73.4L91.4 65.9L92.7 62.3L91.7 61.1L92.7 59.3L92.0 55.8L93.9 54.0Z",[[33.3717,38.7745,211.5,24.0],[29.19,36.0164,108.9,206.0],[32.2445,39.292,230.8,73.1],[29.3517,34.9494,69.2,199.0],[31.2456,36.7709,137.0,116.5]]],["فلسطين",2,"M103.0 155.2L111.6 161.1L89.7 181.2L87.2 186.0L87.8 195.4L75.9 206.0L73.2 197.2L70.3 191.9L79.8 183.4L82.1 179.2L87.5 175.1L89.8 170.9L98.6 161.8L103.0 155.2ZM161.6 102.7L162.9 101.1L162.8 96.7L164.0 95.3L161.4 85.9L161.7 81.2L158.3 72.7L158.7 70.6L164.1 64.8L164.3 61.6L162.0 60.1L162.8 54.0L163.3 52.3L165.7 51.1L168.4 38.8L170.7 34.9L180.8 28.7L185.3 24.1L187.4 24.0L194.6 28.4L205.3 28.4L208.8 30.6L210.4 41.5L228.3 45.6L228.9 47.9L228.1 46.9L227.3 46.9L227.3 47.9L227.8 53.3L228.9 55.3L228.3 59.5L229.7 63.7L228.1 65.7L229.7 65.7L227.6 74.3L228.1 77.0L226.7 78.1L227.3 79.7L225.3 83.0L226.5 86.3L224.5 87.9L223.9 90.3L224.1 96.6L226.6 105.8L224.1 109.2L226.9 120.2L225.7 122.9L228.1 130.3L224.4 134.4L218.9 147.3L217.1 157.2L216.4 167.7L208.5 168.3L201.8 172.2L189.1 182.8L182.3 185.4L167.9 185.3L154.8 187.8L151.7 187.3L149.1 185.3L147.8 180.7L154.7 167.3L155.9 155.3L160.1 148.7L170.1 142.4L177.8 134.7L180.5 134.1L184.0 136.5L187.0 136.0L190.8 137.9L193.7 132.6L192.5 129.7L193.7 126.9L192.9 123.9L193.9 121.9L192.4 121.3L193.1 120.3L192.2 119.5L190.3 119.7L189.0 114.7L187.0 115.0L188.2 122.8L184.5 122.1L184.8 124.3L179.1 123.6L176.2 122.3L172.0 118.1L169.7 118.2L164.7 121.5L160.6 121.0L163.0 118.2L167.2 117.2L167.7 110.7L166.7 108.5L163.8 107.2L164.1 105.7L161.6 102.7Z",[[32.5426,35.2086,187.4,24.0],[31.2114,34.2484,75.9,206.0],[32.2519,35.5725,229.7,63.7],[31.3143,34.2003,70.3,191.9],[31.9175,35.2007,186.5,109.5]]],["لبنان",2,"M80.9 202.3L80.9 199.7L82.7 197.4L84.8 196.5L86.7 193.2L86.1 192.5L87.3 193.2L90.1 187.1L90.5 183.8L88.6 181.0L91.9 177.4L93.7 172.5L94.3 166.5L96.6 162.6L96.2 161.2L103.4 154.9L108.2 140.5L107.6 139.7L109.1 138.5L110.2 133.9L111.7 132.9L115.7 120.3L115.9 114.9L114.7 111.6L116.2 110.4L119.0 111.5L124.1 110.7L127.9 101.4L130.5 100.7L129.2 98.5L129.2 95.7L131.1 87.4L129.5 83.6L129.2 78.2L131.1 75.9L131.6 68.9L132.7 66.0L134.9 64.1L136.5 65.4L140.6 57.2L145.8 54.4L147.4 52.2L145.7 48.8L147.4 49.3L154.8 47.4L162.2 40.6L162.8 33.8L160.9 28.2L167.2 30.6L178.1 30.8L180.2 29.8L182.4 31.0L187.9 30.7L189.7 29.4L190.4 25.3L192.3 24.0L197.7 30.5L199.9 31.3L204.5 30.5L204.1 34.0L203.5 34.5L201.1 33.3L199.7 34.2L199.2 38.9L193.3 43.3L194.8 45.6L200.0 44.9L203.9 45.5L205.4 48.9L212.3 53.5L212.8 55.7L211.7 61.2L215.2 66.0L217.6 67.2L215.8 71.4L216.9 75.1L219.7 78.5L214.9 85.0L208.9 90.8L207.7 94.7L204.9 95.5L201.9 94.7L199.9 95.7L190.4 106.6L188.5 110.7L189.2 112.1L192.5 115.0L197.8 116.6L197.9 118.9L196.8 120.3L195.0 120.6L185.2 117.1L181.0 119.6L179.1 119.7L176.5 117.3L168.4 121.1L158.9 133.1L158.8 137.1L156.8 138.4L156.5 140.8L166.5 145.5L167.3 146.8L167.0 148.9L163.7 151.8L157.5 153.3L156.5 154.8L157.7 157.1L156.3 160.6L147.2 166.8L142.4 174.0L135.8 176.2L131.5 181.3L128.5 182.1L127.0 185.4L123.1 180.7L122.0 180.9L119.3 187.4L118.6 195.8L115.6 202.5L103.1 206.0L101.9 205.8L99.4 202.2L97.4 200.9L92.8 202.1L90.3 201.6L88.3 202.8L80.9 202.3Z",[[34.6875,36.3089,192.3,24.0],[33.0556,35.3452,103.1,206.0],[34.1991,36.6041,219.7,78.5],[33.1013,35.0996,80.3,200.9],[33.9201,35.8798,152.6,109.6]]]];
+let co=store.get("hisban-country");if(co==null||!COUNTRIES[co])co=0;
+$("country").innerHTML=COUNTRIES.map((c,i)=>`<option value="${i}"${i===co?" selected":""}>${c[0]}</option>`).join("");
+$("country").onchange=e=>{co=+e.target.value;store.set("hisban-country",co);tick()};
+const XD=[["n","⬆ أقصى الشمال"],["s","⬇ أقصى الجنوب"],["e","➡ أقصى الشرق"],["w","⬅ أقصى الغرب"],["c","◎ الوسط"]];
+let mapCo=-1;
+function drawMap(){const [,,path,pts]=COUNTRIES[co];mapCo=co;
+  const lab=[["شمال",0,-9],["جنوب",0,15],["شرق",9,4],["غرب",-9,4],["وسط",0,-9]];
+  $("xmap").innerHTML=`<defs><pattern id="mg" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M20 0H0V20" fill="none" stroke="rgba(232,190,92,.07)"/></pattern></defs>
+   <rect width="300" height="230" fill="url(#mg)"/>
+   <path d="${path}" fill="rgba(232,190,92,.10)" stroke="var(--gold)" stroke-width="1.1" stroke-linejoin="round"/>`+
+   pts.map((q,i)=>{const[x,y]=[q[2],q[3]],c=i===4?"#fff":"var(--gold)",L=lab[i],anc=L[1]>0?"start":L[1]<0?"end":"middle";
+     return`<circle cx="${x}" cy="${y}" r="4" fill="#05070f" stroke="${c}" stroke-width="2"/><text x="${x+L[1]}" y="${y+L[2]}" text-anchor="${anc}" fill="${c}" font-size="9" font-weight="700" font-family="var(--display)" paint-order="stroke" stroke="#05070f" stroke-width="3">${L[0]}</text>`}).join("")}
+function renderExt(){const [,tz,,pts]=COUNTRIES[co],L=localNow(tz);if(mapCo!==co)drawMap();
+  $("xg").innerHTML=pts.map((q,i)=>{const s=sun(L.d,q[0],q[1],tz);return`<div class="xc ${XD[i][0]}" style="grid-area:${XD[i][0]}"><div class="dr">${XD[i][1]}</div><div class="co">${q[0].toFixed(2)}, ${q[1].toFixed(2)}</div><div class="an">${husban(L.h,s.rise).toFixed(4)}°</div></div>`}).join("")
+   +`<div class="xk" style="grid-area:ne">الشرق يسبق<br>والغرب يتأخر</div>`;}
+let showPr=store.get("hisban-prayer-angles");if(showPr==null)showPr=true;
+$("prBtn").setAttribute("aria-pressed",showPr);
+$("prBtn").onclick=()=>{showPr=!showPr;store.set("hisban-prayer-angles",showPr);$("prBtn").setAttribute("aria-pressed",showPr);tick()};
+function tick(){
+  fix=loadFix()||fix;
+  if(fix){const p=fixPos(fix);CITIES[MINE][1]=p[0];CITIES[MINE][2]=p[1]}
+  const [,lat,lon,tz]=CITIES[ci];const {d,h}=localNow(tz);const S=sun(d,lat,lon,tz);
+  const dayLen=S.set-S.rise,dayDeg=dayLen*15,nightDeg=360-dayDeg;
+  const hb=husban(h,S.rise),isDay=h>=S.rise&&h<S.set;
+  let pct,pl;
+  if(isDay){pct=(h-S.rise)/dayLen;pl="مؤشر نهارك"}else{const since=h>=S.set?h-S.set:h+24-S.set;pct=since/(24-dayLen);pl="مؤشر ليلك"}
+  const illum=moonIllum(),{alt,az}=altAz(h,S,lat);
+  const aN=dialA(h,S),midnight=S.set+(24-dayLen)/2;
+  // ---- geometric dial: gold degree frame, glowing day/night ring, needle, dark core, four pills ----
+  let deg5="";for(let a=0;a<360;a+=5){const big=a%30===0,p1=P(150,a),p2=P(big?141:145,a);deg5+=`<line x1="${p1[0].toFixed(1)}" y1="${p1[1].toFixed(1)}" x2="${p2[0].toFixed(1)}" y2="${p2[1].toFixed(1)}" stroke="var(--gold)" stroke-opacity="${big?.85:.35}" stroke-width="${big?1.4:.8}"/>`;
+    if(big&&a%90!==0){const[tx,ty]=P(133,a);deg5+=`<text x="${tx.toFixed(1)}" y="${ty.toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-size="7" fill="var(--gold)" fill-opacity=".7" font-family="var(--num)" transform="rotate(${a} ${tx.toFixed(1)} ${ty.toFixed(1)})">${a}°</text>`}}
+  [0,180].forEach(a=>{const[tx,ty]=P(133,a);deg5+=`<text x="${tx.toFixed(1)}" y="${ty.toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-size="8" font-weight="700" fill="var(--gold)" font-family="var(--num)" transform="rotate(${a} ${tx.toFixed(1)} ${ty.toFixed(1)})">${a}°</text>`});
+  // elapsed part of the current half, drawn bright on top of the dim half
+  const half0=isDay?0:180, elapsedPath=aN-half0>0.3?arc(112,half0,aN):"";
+  const [nx,ny]=P(112,aN),[hx,hy]=P(96,aN);
+  const pill=(icon,sub,tm,a,c)=>{const[x,y]=P(a%180?172:180,a);return`<g transform="translate(${x},${y})"><rect x="-46" y="-19" width="92" height="38" rx="19" fill="rgba(6,8,16,.92)" stroke="${c}" stroke-opacity=".55" stroke-width="1.2"/><text text-anchor="middle" y="-2" fill="${c}" font-size="11" font-weight="700" font-family="var(--display)">${icon} ${sub}</text><text text-anchor="middle" y="12" fill="var(--ink)" fill-opacity=".85" font-size="9" font-family="var(--num)">${tm}</text></g>`};
+  const pctTxt=Math.round(pct*100);
+  // prayer geometry: hour angle where the sun reaches a given altitude
+  const haAt=a=>{const c=(Math.sin(a*rad)-Math.sin(lat*rad)*Math.sin(S.dec))/(Math.cos(lat*rad)*Math.cos(S.dec));return c<-1||c>1?null:Math.acos(c)*deg/15};
+  const fH=haAt(-18),iH=haAt(-17),asrAlt=Math.atan(1/(1+Math.tan(Math.abs(lat*rad-S.dec))))*deg,aH=haAt(asrAlt);
+  const PR=[["فجر","الفجر","✧",fH!=null?S.noon-fH:null],["ظهر","الظهر","◑",S.noon],["عصر","العصر","◔",aH!=null?S.noon+aH:null],["مغرب","المغرب","☾",S.set],["عشاء","العشاء","✦",iH!=null?S.noon+iH:null]];
+  const nextI=(()=>{let b=-1,bd=99;PR.forEach((q,i)=>{if(q[3]==null)return;const dd=((q[3]-h)%24+24)%24;if(dd<bd){bd=dd;b=i}});return b})();
+  const prMarks=showPr?PR.map((q,i)=>{if(q[3]==null)return"";const a=dialA(q[3],S),[mx,my]=P(112,a),[lx,ly]=P(83,a);
+    return`<circle cx="${mx.toFixed(1)}" cy="${my.toFixed(1)}" r="4.2" fill="#05070f" stroke="${i===nextI?"#fff":"var(--gold)"}" stroke-width="1.6"/><text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle" dominant-baseline="central" fill="var(--gold)" fill-opacity=".9" font-size="7.5" font-weight="700" font-family="var(--display)">${q[0]}</text>`}).join(""):"";
+  $("prCard").hidden=!showPr;
+  if(showPr)$("prayers").innerHTML=PR.map((q,i)=>`<div class="pr${i===nextI?" next":""}"><div class="ic">${q[2]}</div><div class="nm">${q[1]}</div><div class="an">${q[3]==null?"—":husban(q[3],S.rise).toFixed(4)+"°"}</div></div>`).join("");
+  $("dial").innerHTML=`
+   <defs>
+    <radialGradient id="core"><stop offset="0" stop-color="#0b1022"/><stop offset=".8" stop-color="#05070f"/><stop offset="1" stop-color="#020308"/></radialGradient>
+    <linearGradient id="gDay" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f6c443"/><stop offset="1" stop-color="#b8821a"/></linearGradient>
+    <linearGradient id="gNight" x1="1" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2c4a8a"/><stop offset="1" stop-color="#5b8fd9"/></linearGradient>
+    <linearGradient id="gNeedle" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#fff" stop-opacity=".9"/></linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3.5"/><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="6"/></filter>
+   </defs>
+   <circle cx="150" cy="150" r="156" fill="none" stroke="var(--gold)" stroke-opacity=".25" stroke-width="6" filter="url(#soft)"/>
+   <circle cx="150" cy="150" r="152" fill="none" stroke="var(--gold)" stroke-width="2.4" filter="url(#glow)"/>
+   ${deg5}
+   <circle cx="150" cy="150" r="112" fill="none" stroke="#0d1530" stroke-width="18"/>
+   <path d="${arc(112,0,90)}${arc(112,90,180)}" fill="none" stroke="url(#gDay)" stroke-width="14" stroke-opacity="${isDay?.35:.55}"/>
+   <path d="${arc(112,180,270)}${arc(112,270,359.99)}" fill="none" stroke="url(#gNight)" stroke-width="14" stroke-opacity="${isDay?.55:.35}"/>
+   ${elapsedPath?`<path d="${elapsedPath}" fill="none" stroke="${isDay?"url(#gDay)":"url(#gNight)"}" stroke-width="14" filter="url(#glow)"/>`:""}
+   <circle cx="150" cy="150" r="96" fill="url(#core)" stroke="var(--gold)" stroke-opacity=".28" stroke-width="1.2"/>
+   <circle cx="150" cy="150" r="64" fill="none" stroke="var(--gold)" stroke-opacity=".12"/>
+   <line x1="150" y1="150" x2="${hx.toFixed(1)}" y2="${hy.toFixed(1)}" stroke="#fff" stroke-opacity=".55" stroke-width="1.4"/>
+   ${prMarks}
+   <circle cx="${nx.toFixed(1)}" cy="${ny.toFixed(1)}" r="7" fill="${isDay?"#ffe08a":"#dbe7ff"}" stroke="#fff" stroke-width="1.5" filter="url(#glow)"/>
+   <text x="150" y="88" text-anchor="middle" fill="var(--muted)" font-size="8.5" font-family="var(--body)">🕒 زاوية حُسبان</text>
+   <text x="150" y="104" text-anchor="middle" fill="#fff" font-size="16" font-weight="700" font-family="var(--num)">${hb.toFixed(4)}°</text>
+   <line x1="122" y1="112" x2="178" y2="112" stroke="var(--gold)" stroke-opacity=".35"/>
+   <text x="150" y="125" text-anchor="middle" fill="var(--muted)" font-size="8.5" font-family="var(--body)">📊 ${pl}</text>
+   <text x="150" y="157" text-anchor="middle" fill="${isDay?"var(--gold)":"#6f9ae6"}" font-size="34" font-weight="700" font-family="var(--num)">${pctTxt}%</text>
+   <text x="150" y="173" text-anchor="middle" fill="var(--muted)" font-size="8" font-family="var(--body)">من ${isDay?"نهارك":"ليلك"} قد مضى ⁦${pctTxt}%⁩</text>
+   <line x1="122" y1="181" x2="178" y2="181" stroke="var(--gold)" stroke-opacity=".35"/>
+   <text x="150" y="199" text-anchor="middle" fill="var(--gold)" font-size="16" font-weight="700" font-family="var(--num)">${fmt(h)}:${pad2(d.getUTCSeconds())}</text>
+   <text x="150" y="214" text-anchor="middle" fill="var(--muted)" font-size="8.5" font-family="var(--num)">☾ ${Math.round(illum*100)}%</text>
+   ${pill("☀","بداية النهار",fmt(S.rise),0,"var(--gold)")}${pill("◑","منتصف النهار",fmt(S.noon),90,"var(--gold)")}${pill("☾","بداية اليوم",fmt(S.set),180,"#7fa6ea")}${pill("✦","منتصف الليل",fmt(midnight),270,"#7fa6ea")}`;
+  renderExt();
+  $("arcs").textContent=`${dayDeg.toFixed(4)}° / ${nightDeg.toFixed(4)}°`;
+  $("bd").style.width=dayDeg/3.6+"%";$("bn").style.width=nightDeg/3.6+"%";
+  $("dl").textContent=dayDeg.toFixed(4)+"°";$("nl").textContent=nightDeg.toFixed(4)+"°";
+  $("alt").textContent=alt.toFixed(2)+"°";$("az").textContent=az.toFixed(2)+"°";
+  $("rise").textContent=fmt(S.rise);$("set").textContent=fmt(S.set);$("dlen").textContent=fmtS(dayLen);$("moon").textContent=Math.round(illum*100)+"%";
+  $("cities").innerHTML=COMPARE.map(i=>{const c=CITIES[i],L=localNow(c[3]),s=sun(L.d,c[1],c[2],c[3]);
+    return`<div class="city${i===ci?" on":""}"><div class="nm">${c[0]}</div><div class="an num">${husban(L.h,s.rise).toFixed(4)}°</div></div>`}).join("");
+  const ld=new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate(),12));
+  try{$("greg").textContent=new Intl.DateTimeFormat("ar-DZ",{day:"numeric",month:"long",year:"numeric",timeZone:"UTC"}).format(ld)}catch(e){}
+  try{$("hijri").textContent=new Intl.DateTimeFormat("ar-SA-u-ca-islamic-umalqura-nu-latn",{day:"numeric",month:"long",year:"numeric",timeZone:"UTC"}).format(ld)}catch(e){}
+  renderCompass(S,lat,lon,az,alt);
+  renderLoc();
+}
+tick();setInterval(tick,1000);
+gpsFix(true); // GPS once on open, then off
+if("serviceWorker" in navigator&&window.isSecureContext){navigator.serviceWorker.register("sw.js").catch(()=>{})}
+
+// starfield
+(()=>{const c=$("stars"),x=c.getContext("2d");let st=[];
+ function size(){c.width=innerWidth*devicePixelRatio;c.height=innerHeight*devicePixelRatio;st=Array.from({length:160},()=>({x:Math.random()*c.width,y:Math.random()*c.height,r:Math.random()*1.3*devicePixelRatio,p:Math.random()*6}))}
+ size();addEventListener("resize",size);
+ (function f(t){x.clearRect(0,0,c.width,c.height);st.forEach(s=>{x.globalAlpha=.35+.45*Math.sin(t/900+s.p)**2;x.fillStyle="#fff";x.beginPath();x.arc(s.x,s.y,s.r,0,7);x.fill()});requestAnimationFrame(f)})(0);
+})();
+</script>
+</body>
+</html>
