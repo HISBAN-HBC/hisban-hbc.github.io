@@ -92,6 +92,10 @@ h1{font-family:var(--display);color:var(--gold);font-size:1.45rem;margin:0;text-
 .city .nm{font-weight:600;font-size:.88rem;margin:3px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .city .an{color:var(--gold);font-size:.85rem}
 .stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.stats.rs{margin-top:-6px}
+.stats.rs .stat{text-align:center;padding:8px 6px}
+.stats.rs .lbl{white-space:nowrap}
+.stats.rs .stat b{text-align:center;overflow:visible;font-size:1.3rem;letter-spacing:.03em}
 .stat{padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--panel);min-width:0}
 .stat b{display:block;font-size:1.05rem;margin-top:2px;direction:ltr;text-align:right;white-space:nowrap;overflow-x:auto}
 h2{font-family:var(--display);color:var(--gold);font-size:1.15rem;margin:0}
@@ -144,6 +148,10 @@ h2{font-family:var(--display);color:var(--gold);font-size:1.15rem;margin:0}
     <label class="sel end" for="city" title="المدينة"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" aria-hidden="true"><path d="M12 22s7-6.1 7-12a7 7 0 1 0-14 0c0 5.9 7 12 7 12z"/><circle cx="12" cy="10" r="2.6"/></svg><select id="city" aria-label="المدينة"></select></label>
   </header>
   <div class="dates"><span id="greg"></span><span id="hijri"></span></div>
+  <section class="stats rs">
+    <div class="stat"><span class="lbl">☀ الشروق</span><b class="num" id="rise"></b></div>
+    <div class="stat end"><span class="lbl">☾ الغروب</span><b class="num" id="set"></b></div>
+  </section>
 
   <div class="dial"><svg id="dial" viewBox="-72 -46 444 392" aria-label="قرص الشمس اليومي"></svg></div>
 
@@ -166,10 +174,6 @@ h2{font-family:var(--display);color:var(--gold);font-size:1.15rem;margin:0}
     <div class="prNote">الفجر عند انخفاض الشمس 18° والعشاء عند 17° تحت الأفق، والعصر عند ظل المثل.</div>
   </section>
 
-  <section class="stats" style="margin-top:-8px">
-    <div class="stat"><span class="lbl">الشروق</span><b class="num" id="rise"></b></div>
-    <div class="stat"><span class="lbl">الغروب</span><b class="num" id="set"></b></div>
-  </section>
 
   <section>
     <div class="lbl" style="margin-bottom:8px">زاوية الحُسبان الآن في مدن الدولة</div>
@@ -364,6 +368,7 @@ function drawMap(){const [,,path,pts]=COUNTRIES[co];mapCo=co;
 function extAngle(lat,lon){const tz=Math.round(lon/15),L=localNow(tz),s=sun(L.d,lat,lon,tz);
   const c=(Math.sin(-.833*rad)-Math.sin(lat*rad)*Math.sin(s.dec))/(Math.cos(lat*rad)*Math.cos(s.dec));
   return c>1?"ليل قطبي":c<-1?"نهار قطبي":husban(L.h,s.rise).toFixed(4)+"°"}
+const fmtHMS=h=>{h=((h%24)+24)%24;const t=Math.round(h*3600)%86400;return pad2(Math.floor(t/3600))+":"+pad2(Math.floor(t%3600/60))+":"+pad2(t%60)};
 function renderExt(){const pts=COUNTRIES[co][3];if(mapCo!==co){drawMap();$("extName").textContent=COUNTRIES[co][0]}
   $("xg").innerHTML=pts.map((q,i)=>{const v=extAngle(q[0],q[1]);return`<div class="xc ${XD[i][0]}" style="grid-area:${XD[i][0]}"><div class="dr">${XD[i][1]}</div><div class="co">${q[0].toFixed(2)}, ${q[1].toFixed(2)}</div><div class="an${v.endsWith("°")?"":" polar"}">${v}</div></div>`}).join("")
    +`<div class="xk" style="grid-area:ne">الشرق يسبق<br>والغرب يتأخر</div>`;}
@@ -433,7 +438,7 @@ function tick(){
   $("bd").style.width=dayDeg/3.6+"%";$("bn").style.width=nightDeg/3.6+"%";
   $("dl").textContent=dayDeg.toFixed(4)+"°";$("nl").textContent=nightDeg.toFixed(4)+"°";
   $("alt").textContent=alt.toFixed(2)+"°";$("az").textContent=az.toFixed(2)+"°";
-  $("rise").textContent=fmt(S.rise);$("set").textContent=fmt(S.set);$("dlen").textContent=fmtS(dayLen);$("moon").textContent=Math.round(illum*100)+"%";
+  $("rise").textContent=fmtHMS(S.rise);$("set").textContent=fmtHMS(S.set);$("dlen").textContent=fmtS(dayLen);$("moon").textContent=Math.round(illum*100)+"%";
   $("cities").innerHTML=CITIES.slice(0,MINE).map((c,i)=>{const L=localNow(c[3]),s=sun(L.d,c[1],c[2],c[3]);
     return`<div class="city${i===ci?" on":""}"><div class="nm">${c[0]}</div><div class="an num">${husban(L.h,s.rise).toFixed(4)}°</div></div>`}).join("");
   const ld=new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate(),12));
