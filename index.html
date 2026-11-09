@@ -139,6 +139,11 @@ h2{font-family:var(--display);color:var(--gold);font-size:1.15rem;margin:0}
 .cmp.mini .btns{grid-area:b}
 .cmp.mini .btn{padding:7px 8px;font-size:.82rem;min-width:90px}
 .cmp.mini .note{display:none}
+.btns.rsb{display:grid;grid-template-columns:1fr minmax(0,1.05fr) 1fr;gap:6px;align-items:stretch}
+.btns.rsb .btn{min-width:0;padding:6px 4px;font-size:.8rem;line-height:1.3}
+.stat.rsx{text-align:center;padding:5px 4px}
+.stat.rsx .lbl{white-space:nowrap}
+.stat.rsx b{text-align:center;overflow:visible;font-size:.95rem;letter-spacing:.02em;margin-top:0}
 @media (max-width:380px){.cities{grid-template-columns:repeat(2,1fr)}.kv{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:reduce){#stars{display:none}</style>
 </head>
@@ -151,10 +156,6 @@ h2{font-family:var(--display);color:var(--gold);font-size:1.15rem;margin:0}
     <label class="sel end" for="city" title="المدينة"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" aria-hidden="true"><path d="M12 22s7-6.1 7-12a7 7 0 1 0-14 0c0 5.9 7 12 7 12z"/><circle cx="12" cy="10" r="2.6"/></svg><select id="city" aria-label="المدينة"></select></label>
   </header>
   <div class="dates"><span id="greg"></span><span id="hijri"></span></div>
-  <section class="stats rs">
-    <div class="stat"><span class="lbl">☀ الشروق</span><b class="num" id="rise"></b></div>
-    <div class="stat end"><span class="lbl">☾ الغروب</span><b class="num" id="set"></b></div>
-  </section>
   <section class="card cmp mini" aria-label="البوصلة">
     <div class="loc-head"><h2>البوصلة</h2><span class="badge warn" id="cmpState">متوقفة</span></div>
     <div class="cmp-dial"><svg id="cmp" viewBox="-24 -30 348 354" role="img" aria-label="قرص البوصلة"></svg></div>
@@ -165,10 +166,10 @@ h2{font-family:var(--display);color:var(--gold);font-size:1.15rem;margin:0}
       <div><span><i style="background:var(--night);border-radius:2px;width:5px;height:14px"></i>غروب اليوم</span><b id="lgSet">—</b></div>
       <div><span><i style="background:#3fbf7f;border-radius:2px"></i>القبلة</span><b id="lgQibla">—</b></div>
     </div>
-    <div class="btns">
+    <div class="btns rsb">
+      <div class="stat rsx"><span class="lbl">☀ الشروق</span><b class="num" id="rise"></b></div>
       <button class="btn" id="cmpBtn" type="button">تشغيل البوصلة</button>
-      <button class="btn alt" id="cmpChk" type="button" hidden>افحص بالشمس</button>
-      <button class="btn alt" id="cmpCal" type="button" hidden>معايرة بالشمس</button>
+      <div class="stat rsx"><span class="lbl">☾ الغروب</span><b class="num" id="set"></b></div>
     </div>
     <p class="note" id="cmpNote">البوصلة تعمل دون شبكة ولا إنترنت، من المستشعر المغناطيسي في الهاتف. أمسك الهاتف أفقيًا بعيدًا عن المعادن. إن اضطربت القراءة، حرّك الهاتف في شكل الرقم 8.</p>
   </section>
@@ -338,17 +339,15 @@ function compassFrame(){
   requestAnimationFrame(compassFrame);
 }
 $("cmpBtn").onclick=async()=>{
-  if(compassOn){compassOn=false;oriStop("compass");$("cmpBtn").textContent="تشغيل البوصلة";$("cmpCal").hidden=true;$("cmpChk").hidden=true;$("cmpCard").setAttribute("transform","");document.querySelectorAll("#cmp .cl").forEach(el=>el.removeAttribute("transform"));$("cmpDeg").textContent="—";$("cmpDir").textContent="البوصلة متوقفة";$("cmpAim").textContent="";const st=$("cmpState");st.className="badge warn";st.textContent="متوقفة";return}
+  if(compassOn){compassOn=false;oriStop("compass");$("cmpBtn").textContent="تشغيل البوصلة";$("cmpCard").setAttribute("transform","");document.querySelectorAll("#cmp .cl").forEach(el=>el.removeAttribute("transform"));$("cmpDeg").textContent="—";$("cmpDir").textContent="البوصلة متوقفة";$("cmpAim").textContent="";const st=$("cmpState");st.className="badge warn";st.textContent="متوقفة";return}
   if(!window.isSecureContext){$("cmpDir").textContent="البوصلة تحتاج أن تُفتح الصفحة عبر https.";return}
   if(typeof DeviceOrientationEvent==="undefined"){$("cmpDir").textContent="هذا الجهاز لا يوفّر بوصلة للمتصفح.";return}
   const granted=await sensorPermission(false); // Safari asks; other browsers may lack or refuse the call yet still deliver events
-  compassOn=true;oriStart("compass");$("cmpBtn").textContent="إيقاف البوصلة";$("cmpCal").hidden=false;$("cmpChk").hidden=false;$("cmpDir").textContent="انتظر قراءة المستشعر… حرّك الهاتف قليلًا.";
+  compassOn=true;oriStart("compass");$("cmpBtn").textContent="إيقاف البوصلة";$("cmpDir").textContent="انتظر قراءة المستشعر… حرّك الهاتف قليلًا.";
   setTimeout(()=>{if(compassOn&&heading==null)$("cmpDir").textContent=granted?"لم تصل قراءة. قد لا يحتوي الهاتف على مستشعر مغناطيسي، أو أن المتصفح يمنعه.":"لم يُسمح بالوصول إلى البوصلة. اسمح بمستشعرات الحركة في إعدادات المتصفح ثم أعد المحاولة."},4000);
   requestAnimationFrame(compassFrame);
 };
 const cmpOut=t=>{$("cmpNote").textContent=t};
-$("cmpCal").onclick=()=>calibrateWithSun(sunNow(),cmpOut);
-$("cmpChk").onclick=()=>checkWithSun(sunNow(),cmpOut);
 
 /* ---------- dial & readings ---------- */
 const P=(r,a)=>[150+r*Math.sin(a*rad),150-r*Math.cos(a*rad)];
