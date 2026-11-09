@@ -1,5 +1,5 @@
 // HISBAN Clock offline cache: network first, cached copy when there is no network
-const CACHE = "hisban-clock-1.0.13";
+const CACHE = "hisban-clock-1.0.15";
 const FILES = ["./", "./index.html", "./hisban-core.js", "./manifest.json", "./privacy.html", "./icon-192.png", "./icon-512.png"];
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)));
