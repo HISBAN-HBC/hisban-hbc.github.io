@@ -40,8 +40,6 @@ header .sel.end{justify-self:end}
 header .sel svg{flex:none}
 header .sel select{color:var(--gold);min-width:0;max-width:100%;text-overflow:ellipsis;font-size:.9rem}
 @media (max-width:420px){header h1{font-size:1.2rem}header .sel{padding:7px 7px}header .sel select{font-size:.84rem}}
-.hd2{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
-.prBtn.sm{width:34px;height:34px;border-radius:11px;flex:none}
 .ext .hd .cn{color:var(--gold);font-weight:700;font-size:.95rem}
 h1{font-family:var(--display);color:var(--gold);font-size:1.45rem;margin:0;text-align:center;white-space:nowrap}
 .sel{display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:6px 10px}
@@ -74,14 +72,6 @@ h1{font-family:var(--display);color:var(--gold);font-size:1.45rem;margin:0;text-
 .xc .an.polar{direction:rtl;color:#9fb6ff}
 .xc.c{border-color:rgba(232,190,92,.55)}
 .xk{display:grid;place-items:center;color:var(--muted);font-size:.66rem;text-align:center;line-height:1.5}
-.prBtn{justify-self:end;width:42px;height:42px;border-radius:14px;border:1px solid rgba(232,190,92,.45);background:rgba(10,12,22,.75);display:grid;place-items:center;cursor:pointer;padding:0}
-.prBtn[aria-pressed="false"]{opacity:.45}
-.prayers{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
-.pr{text-align:center;padding:8px 2px;border:1px solid var(--line);border-radius:12px;background:var(--panel);min-width:0}
-.pr .ic{font-size:1rem;line-height:1}
-.pr .nm{font-size:.8rem;font-weight:600;margin:3px 0}
-.pr .an{color:var(--gold);font-size:.68rem;letter-spacing:-.02em;direction:ltr;unicode-bidi:isolate}
-.pr.next{border-color:var(--gold);box-shadow:0 0 0 1px rgba(232,190,92,.35) inset}
 .prNote{color:var(--muted);font-size:.72rem;margin-top:8px}
 .bar .d{background:linear-gradient(90deg,#8a6512,var(--gold) 60%,#f6c443)}
 .bar .n{background:linear-gradient(90deg,#16264d,var(--night-deep) 40%,#4f7fc8)}
@@ -168,11 +158,6 @@ h2{font-family:var(--display);color:var(--gold);font-size:1.15rem;margin:0}
     <div class="row"><span>نهار <span class="num" id="dl"></span></span><span class="num">360°</span><span>ليل <span class="num" id="nl"></span></span></div>
   </section>
 
-  <section class="card" id="prCard">
-    <div class="hd2"><span class="lbl">🕌 الزوايا الهندسية للصلوات (زاوية حُسبان)</span><button class="prBtn sm" id="prBtn" aria-pressed="true" title="إظهار الصلوات على القرص" aria-label="إظهار الصلوات على القرص"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 12V3"/><path d="M12 12l6.4 6.4"/><path d="M12 12L4.6 16.5"/><path d="M12 6.2a5.8 5.8 0 0 1 4.1 1.7" stroke-dasharray="1.5 1.5"/><circle cx="12" cy="12" r="1.4" fill="var(--gold)"/></svg></button></div>
-    <div class="prayers" id="prayers"></div>
-    <div class="prNote">الفجر عند انخفاض الشمس 18° والعشاء عند 17° تحت الأفق، والعصر عند ظل المثل.</div>
-  </section>
 
 
   <section>
@@ -372,9 +357,6 @@ const fmtHMS=h=>{h=((h%24)+24)%24;const t=Math.round(h*3600)%86400;return pad2(M
 function renderExt(){const pts=COUNTRIES[co][3];if(mapCo!==co){drawMap();$("extName").textContent=COUNTRIES[co][0]}
   $("xg").innerHTML=pts.map((q,i)=>{const v=extAngle(q[0],q[1]);return`<div class="xc ${XD[i][0]}" style="grid-area:${XD[i][0]}"><div class="dr">${XD[i][1]}</div><div class="co">${q[0].toFixed(2)}, ${q[1].toFixed(2)}</div><div class="an${v.endsWith("°")?"":" polar"}">${v}</div></div>`}).join("")
    +`<div class="xk" style="grid-area:ne">الشرق يسبق<br>والغرب يتأخر</div>`;}
-let showPr=store.get("hisban-prayer-angles");if(showPr==null)showPr=true;
-$("prBtn").setAttribute("aria-pressed",showPr);
-$("prBtn").onclick=()=>{showPr=!showPr;store.set("hisban-prayer-angles",showPr);$("prBtn").setAttribute("aria-pressed",showPr);tick()};
 function tick(){
   fix=loadFix()||fix;
   refreshTz();if(fix){const p=fixPos(fix);CITIES[MINE][1]=p[0];CITIES[MINE][2]=p[1]}
@@ -394,14 +376,6 @@ function tick(){
   const [nx,ny]=P(112,aN),[hx,hy]=P(96,aN);
   const pill=(icon,sub,tm,a,c)=>{const[x,y]=P(a%180?172:180,a);return`<g transform="translate(${x},${y})"><rect x="-46" y="-19" width="92" height="38" rx="19" fill="rgba(6,8,16,.92)" stroke="${c}" stroke-opacity=".55" stroke-width="1.2"/><text text-anchor="middle" y="-2" fill="${c}" font-size="11" font-weight="700" font-family="var(--display)">${icon} ${sub}</text><text text-anchor="middle" y="12" fill="var(--ink)" fill-opacity=".85" font-size="9" font-family="var(--num)">${tm}</text></g>`};
   const pctTxt=Math.round(pct*100);
-  // prayer geometry: hour angle where the sun reaches a given altitude
-  const haAt=a=>{const c=(Math.sin(a*rad)-Math.sin(lat*rad)*Math.sin(S.dec))/(Math.cos(lat*rad)*Math.cos(S.dec));return c<-1||c>1?null:Math.acos(c)*deg/15};
-  const fH=haAt(-18),iH=haAt(-17),asrAlt=Math.atan(1/(1+Math.tan(Math.abs(lat*rad-S.dec))))*deg,aH=haAt(asrAlt);
-  const PR=[["فجر","الفجر","✧",fH!=null?S.noon-fH:null],["ظهر","الظهر","◑",S.noon],["عصر","العصر","◔",aH!=null?S.noon+aH:null],["مغرب","المغرب","☾",S.set],["عشاء","العشاء","✦",iH!=null?S.noon+iH:null]];
-  const nextI=(()=>{let b=-1,bd=99;PR.forEach((q,i)=>{if(q[3]==null)return;const dd=((q[3]-h)%24+24)%24;if(dd<bd){bd=dd;b=i}});return b})();
-  const prMarks=showPr?PR.map((q,i)=>{if(q[3]==null)return"";const a=dialA(q[3],S),[mx,my]=P(112,a),[lx,ly]=P(83,a);
-    return`<circle cx="${mx.toFixed(1)}" cy="${my.toFixed(1)}" r="4.2" fill="#05070f" stroke="${i===nextI?"#fff":"var(--gold)"}" stroke-width="1.6"/><text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle" dominant-baseline="central" fill="var(--gold)" fill-opacity=".9" font-size="7.5" font-weight="700" font-family="var(--display)">${q[0]}</text>`}).join(""):"";
-  $("prayers").innerHTML=PR.map((q,i)=>`<div class="pr${i===nextI?" next":""}"><div class="ic">${q[2]}</div><div class="nm">${q[1]}</div><div class="an">${q[3]==null?"—":husban(q[3],S.rise).toFixed(4)+"°"}</div></div>`).join("");
   $("dial").innerHTML=`
    <defs>
     <radialGradient id="core"><stop offset="0" stop-color="#0b1022"/><stop offset=".8" stop-color="#05070f"/><stop offset="1" stop-color="#020308"/></radialGradient>
@@ -421,7 +395,6 @@ function tick(){
    <circle cx="150" cy="150" r="96" fill="url(#core)" stroke="var(--gold)" stroke-opacity=".28" stroke-width="1.2"/>
    <circle cx="150" cy="150" r="64" fill="none" stroke="var(--gold)" stroke-opacity=".12"/>
    <line x1="150" y1="150" x2="${hx.toFixed(1)}" y2="${hy.toFixed(1)}" stroke="#fff" stroke-opacity=".55" stroke-width="1.4"/>
-   ${prMarks}
    <circle cx="${nx.toFixed(1)}" cy="${ny.toFixed(1)}" r="7" fill="${isDay?"#ffe08a":"#dbe7ff"}" stroke="#fff" stroke-width="1.5" filter="url(#glow)"/>
    <text x="150" y="88" text-anchor="middle" fill="var(--muted)" font-size="8.5" font-family="var(--body)">🕒 زاوية حُسبان</text>
    <text x="150" y="104" text-anchor="middle" fill="#fff" font-size="16" font-weight="700" font-family="var(--num)">${hb.toFixed(4)}°</text>
