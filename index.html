@@ -125,6 +125,20 @@ h2{font-family:var(--display);color:var(--gold);font-size:1.15rem;margin:0}
 .cmp-legend>div{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;font-size:.85rem;min-width:0}
 .cmp-legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-inline-end:6px;vertical-align:middle}
 .cmp-legend b{direction:ltr;font-family:var(--num)}
+.cmp.mini{display:grid;grid-template-columns:minmax(0,46%) minmax(0,1fr);grid-template-areas:"h h" "d r" "d l" "b b";gap:6px 10px;align-items:center;padding-top:12px;padding-bottom:12px}
+.cmp.mini .loc-head{grid-area:h}
+.cmp.mini .loc-head h2{font-size:1.05rem}
+.cmp.mini .cmp-dial{grid-area:d;max-width:190px;width:100%}
+.cmp.mini .cmp-read{grid-area:r;align-self:end}
+.cmp.mini .cmp-read b{font-size:1.3rem}
+.cmp.mini .cmp-read span{font-size:.72rem;display:block;line-height:1.5}
+.cmp.mini #cmpAim{font-size:.72rem!important}
+.cmp.mini .cmp-legend{grid-area:l;grid-template-columns:1fr;gap:4px;align-self:start}
+.cmp.mini .cmp-legend>div{padding:4px 7px;font-size:.7rem;gap:4px}
+.cmp.mini .cmp-legend i{width:8px;height:8px}
+.cmp.mini .btns{grid-area:b}
+.cmp.mini .btn{padding:7px 8px;font-size:.82rem;min-width:90px}
+.cmp.mini .note{display:none}
 @media (max-width:380px){.cities{grid-template-columns:repeat(2,1fr)}.kv{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:reduce){#stars{display:none}</style>
 </head>
@@ -140,6 +154,23 @@ h2{font-family:var(--display);color:var(--gold);font-size:1.15rem;margin:0}
   <section class="stats rs">
     <div class="stat"><span class="lbl">☀ الشروق</span><b class="num" id="rise"></b></div>
     <div class="stat end"><span class="lbl">☾ الغروب</span><b class="num" id="set"></b></div>
+  </section>
+  <section class="card cmp mini" aria-label="البوصلة">
+    <div class="loc-head"><h2>البوصلة</h2><span class="badge warn" id="cmpState">متوقفة</span></div>
+    <div class="cmp-dial"><svg id="cmp" viewBox="-24 -30 348 354" role="img" aria-label="قرص البوصلة"></svg></div>
+    <div class="cmp-read"><b class="num" id="cmpDeg">—</b><span id="cmpDir">شغّل البوصلة لقراءة اتجاه الهاتف</span><div id="cmpAim" style="font-size:.85rem;margin-top:4px;color:var(--muted)"></div></div>
+    <div class="cmp-legend">
+      <div><span><i style="background:var(--gold)"></i><span id="lgSunL">الشمس الآن</span></span><b id="lgSun">—</b></div>
+      <div><span><i style="background:#ff9f43;border-radius:2px;width:5px;height:14px"></i>شروق اليوم</span><b id="lgRise">—</b></div>
+      <div><span><i style="background:var(--night);border-radius:2px;width:5px;height:14px"></i>غروب اليوم</span><b id="lgSet">—</b></div>
+      <div><span><i style="background:#3fbf7f;border-radius:2px"></i>القبلة</span><b id="lgQibla">—</b></div>
+    </div>
+    <div class="btns">
+      <button class="btn" id="cmpBtn" type="button">تشغيل البوصلة</button>
+      <button class="btn alt" id="cmpChk" type="button" hidden>افحص بالشمس</button>
+      <button class="btn alt" id="cmpCal" type="button" hidden>معايرة بالشمس</button>
+    </div>
+    <p class="note" id="cmpNote">البوصلة تعمل دون شبكة ولا إنترنت، من المستشعر المغناطيسي في الهاتف. أمسك الهاتف أفقيًا بعيدًا عن المعادن. إن اضطربت القراءة، حرّك الهاتف في شكل الرقم 8.</p>
   </section>
 
   <div class="dial"><svg id="dial" viewBox="-72 -46 444 392" aria-label="قرص الشمس اليومي"></svg></div>
@@ -164,23 +195,6 @@ h2{font-family:var(--display);color:var(--gold);font-size:1.15rem;margin:0}
     <div class="cities" id="cities"></div>
   </section>
 
-  <section class="card cmp" aria-label="البوصلة">
-    <div class="loc-head"><h2>البوصلة</h2><span class="badge warn" id="cmpState">متوقفة</span></div>
-    <div class="cmp-dial"><svg id="cmp" viewBox="-24 -30 348 354" role="img" aria-label="قرص البوصلة"></svg></div>
-    <div class="cmp-read"><b class="num" id="cmpDeg">—</b><span id="cmpDir">شغّل البوصلة لقراءة اتجاه الهاتف</span><div id="cmpAim" style="font-size:.85rem;margin-top:4px;color:var(--muted)"></div></div>
-    <div class="cmp-legend">
-      <div><span><i style="background:var(--gold)"></i>الشمس الآن</span><b id="lgSun">—</b></div>
-      <div><span><i style="background:#ff9f43;border-radius:2px;width:5px;height:14px"></i>شروق اليوم</span><b id="lgRise">—</b></div>
-      <div><span><i style="background:var(--night);border-radius:2px;width:5px;height:14px"></i>غروب اليوم</span><b id="lgSet">—</b></div>
-      <div><span><i style="background:#3fbf7f;border-radius:2px"></i>القبلة</span><b id="lgQibla">—</b></div>
-    </div>
-    <div class="btns">
-      <button class="btn" id="cmpBtn" type="button">تشغيل البوصلة</button>
-      <button class="btn alt" id="cmpChk" type="button" hidden>افحص بالشمس</button>
-      <button class="btn alt" id="cmpCal" type="button" hidden>معايرة بالشمس</button>
-    </div>
-    <p class="note" id="cmpNote">البوصلة تعمل دون شبكة ولا إنترنت، من المستشعر المغناطيسي في الهاتف. أمسك الهاتف أفقيًا بعيدًا عن المعادن. إن اضطربت القراءة، حرّك الهاتف في شكل الرقم 8.</p>
-  </section>
 
   <section class="card loc" aria-live="polite">
     <div class="loc-head"><h2>موقعي</h2><span class="badge bad" id="state">غير محدد</span></div>
@@ -308,7 +322,7 @@ function renderCompass(S,lat,lon,sunAz,sunAlt){
     `<rect x="${qx-8}" y="${qy-8}" width="16" height="16" rx="2" fill="#3fbf7f" stroke="var(--sky)" stroke-width="2" transform="rotate(${q} ${qx} ${qy})"/>`+
     `<circle cx="${sx}" cy="${sy}" r="9" fill="${sunAlt>-0.833?"var(--gold)":"none"}" stroke="${sunAlt>-0.833?"var(--sky)":"var(--muted)"}" stroke-width="2"/>`;
   const f=a=>a==null?"—":a.toFixed(1)+"°";
-  $("lgSun").textContent=f(sunAz)+(sunAlt>-0.833?"":" (تحت الأفق)");$("lgRise").textContent=f(r);$("lgSet").textContent=f(r==null?null:360-r);$("lgQibla").textContent=f(q);
+  $("lgSun").textContent=f(sunAz);$("lgSunL").textContent=sunAlt>-0.833?"الشمس الآن":"الشمس تحت الأفق";$("lgRise").textContent=f(r);$("lgSet").textContent=f(r==null?null:360-r);$("lgQibla").textContent=f(q);
 }
 function compassFrame(){
   if(!compassOn)return;
