@@ -125,7 +125,7 @@ h2{font-family:var(--display);color:var(--gold);font-size:1.15rem;margin:0}
 .cmp-legend>div{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;font-size:.85rem;min-width:0}
 .cmp-legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-inline-end:6px;vertical-align:middle}
 .cmp-legend b{direction:ltr;font-family:var(--num)}
-.cmp.mini{display:grid;grid-template-columns:minmax(0,46%) minmax(0,1fr);grid-template-areas:"h h" "d r" "d l" "b b";gap:6px 10px;align-items:center;padding-top:12px;padding-bottom:12px}
+.cmp.mini{display:grid;grid-template-columns:minmax(0,46%) minmax(0,1fr);grid-template-areas:"h h" "d r" "d l" "t t" "b b";gap:6px 10px;align-items:center;padding-top:12px;padding-bottom:12px}
 .cmp.mini .loc-head{grid-area:h}
 .cmp.mini .loc-head h2{font-size:1.05rem}
 .cmp.mini .cmp-dial{grid-area:d;max-width:190px;width:100%}
@@ -139,6 +139,7 @@ h2{font-family:var(--display);color:var(--gold);font-size:1.15rem;margin:0}
 .cmp.mini .btns{grid-area:b}
 .cmp.mini .btn{padding:7px 8px;font-size:.82rem;min-width:90px}
 .cmp.mini .note{display:none}
+.dates.cd{grid-area:t;margin:4px 2px 0;font-size:.82rem;color:var(--ink);opacity:.85}
 .btns.rsb{display:grid;grid-template-columns:1fr minmax(0,1.05fr) 1fr;gap:6px;align-items:stretch}
 .btns.rsb .btn{min-width:0;padding:6px 4px;font-size:.8rem;line-height:1.3}
 .stat.rsx{text-align:center;padding:5px 4px}
@@ -155,7 +156,6 @@ h2{font-family:var(--display);color:var(--gold);font-size:1.15rem;margin:0}
     <h1>ساعة حُسبان</h1>
     <label class="sel end" for="city" title="المدينة"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" aria-hidden="true"><path d="M12 22s7-6.1 7-12a7 7 0 1 0-14 0c0 5.9 7 12 7 12z"/><circle cx="12" cy="10" r="2.6"/></svg><select id="city" aria-label="المدينة"></select></label>
   </header>
-  <div class="dates"><span id="greg"></span><span id="hijri"></span></div>
   <section class="card cmp mini" aria-label="البوصلة">
     <div class="loc-head"><h2>البوصلة</h2><span class="badge warn" id="cmpState">متوقفة</span></div>
     <div class="cmp-dial"><svg id="cmp" viewBox="-24 -30 348 354" role="img" aria-label="قرص البوصلة"></svg></div>
@@ -166,6 +166,7 @@ h2{font-family:var(--display);color:var(--gold);font-size:1.15rem;margin:0}
       <div><span><i style="background:var(--night);border-radius:2px;width:5px;height:14px"></i>غروب اليوم</span><b id="lgSet">—</b></div>
       <div><span><i style="background:#3fbf7f;border-radius:2px"></i>القبلة</span><b id="lgQibla">—</b></div>
     </div>
+    <div class="dates cd"><span id="greg"></span><span id="hijri"></span></div>
     <div class="btns rsb">
       <div class="stat rsx"><span class="lbl">☀ الشروق</span><b class="num" id="rise"></b></div>
       <button class="btn" id="cmpBtn" type="button">تشغيل البوصلة</button>
