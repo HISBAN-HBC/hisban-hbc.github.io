@@ -63,15 +63,14 @@ h1{font-family:var(--display);color:var(--gold);font-size:1.45rem;margin:0;text-
 .ext .hd .t{color:var(--muted);font-size:.85rem}
 .ext .sel{padding:4px 8px}
 .ext .sel select{color:var(--gold);font-size:.85rem}
-.xg{display:grid;grid-template-columns:repeat(3,1fr);grid-template-areas:"ne n nw" "e c w" "se s sw";gap:6px}
-.xc{text-align:center;padding:7px 3px;border:1px solid var(--line);border-radius:12px;background:var(--panel);min-width:0}
-.xc .dr{color:var(--muted);font-size:.68rem}
-.xc .co{font-size:.72rem;margin:3px 0;direction:ltr;unicode-bidi:isolate;font-family:var(--num);white-space:nowrap}
-.xmap{width:100%;height:auto;display:block;margin:0 auto 10px;max-width:420px;border:1px solid var(--line);border-radius:12px;background:rgba(2,3,8,.6)}
-.xc .an{color:var(--gold);font-size:.8rem;direction:ltr;unicode-bidi:isolate}
-.xc .an.polar{direction:rtl;color:#9fb6ff}
-.xc.c{border-color:rgba(232,190,92,.55)}
-.xk{display:grid;place-items:center;color:var(--muted);font-size:.66rem;text-align:center;line-height:1.5}
+.xg{display:grid;gap:4px}
+.xr{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:8px;padding:6px 10px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+.xr.c{border-color:rgba(232,190,92,.55)}
+.xr .dr{font-size:.8rem;white-space:nowrap}
+.xr .co{font-size:.72rem;color:var(--muted);direction:ltr;unicode-bidi:isolate;font-family:var(--num);white-space:nowrap;text-align:center}
+.xr .an{color:var(--gold);font-size:.9rem;font-family:var(--num);direction:ltr;unicode-bidi:isolate;white-space:nowrap}
+.xr .an.polar{direction:rtl;color:#9fb6ff;font-family:var(--body);font-size:.82rem}
+.xmap{width:100%;height:auto;display:block;margin:0 auto 8px;max-width:420px;max-height:34vh;border:1px solid var(--line);border-radius:12px;background:rgba(2,3,8,.6)}
 .prNote{color:var(--muted);font-size:.72rem;margin-top:8px}
 .bar .d{background:linear-gradient(90deg,#8a6512,var(--gold) 60%,#f6c443)}
 .bar .n{background:linear-gradient(90deg,#16264d,var(--night-deep) 40%,#4f7fc8)}
@@ -355,8 +354,7 @@ function extAngle(lat,lon){const tz=Math.round(lon/15),L=localNow(tz),s=sun(L.d,
   return c>1?"ليل قطبي":c<-1?"نهار قطبي":husban(L.h,s.rise).toFixed(4)+"°"}
 const fmtHMS=h=>{h=((h%24)+24)%24;const t=Math.round(h*3600)%86400;return pad2(Math.floor(t/3600))+":"+pad2(Math.floor(t%3600/60))+":"+pad2(t%60)};
 function renderExt(){const pts=COUNTRIES[co][3];if(mapCo!==co){drawMap();$("extName").textContent=COUNTRIES[co][0]}
-  $("xg").innerHTML=pts.map((q,i)=>{const v=extAngle(q[0],q[1]);return`<div class="xc ${XD[i][0]}" style="grid-area:${XD[i][0]}"><div class="dr">${XD[i][1]}</div><div class="co">${q[0].toFixed(2)}, ${q[1].toFixed(2)}</div><div class="an${v.endsWith("°")?"":" polar"}">${v}</div></div>`}).join("")
-   +`<div class="xk" style="grid-area:ne">الشرق يسبق<br>والغرب يتأخر</div>`;}
+  $("xg").innerHTML=[0,2,4,3,1].map(i=>{const q=pts[i],v=extAngle(q[0],q[1]);return`<div class="xr ${XD[i][0]}"><span class="dr">${XD[i][1]}</span><span class="co">${q[0].toFixed(2)}, ${q[1].toFixed(2)}</span><span class="an${v.endsWith("°")?"":" polar"}">${v}</span></div>`}).join("");}
 function tick(){
   fix=loadFix()||fix;
   refreshTz();if(fix){const p=fixPos(fix);CITIES[MINE][1]=p[0];CITIES[MINE][2]=p[1]}
