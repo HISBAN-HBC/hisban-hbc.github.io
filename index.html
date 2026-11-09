@@ -125,21 +125,24 @@ h2{font-family:var(--display);color:var(--gold);font-size:1.15rem;margin:0}
 .cmp-legend>div{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;font-size:.85rem;min-width:0}
 .cmp-legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-inline-end:6px;vertical-align:middle}
 .cmp-legend b{direction:ltr;font-family:var(--num)}
-.cmp.mini{display:grid;grid-template-columns:minmax(0,46%) minmax(0,1fr);grid-template-areas:"h h" "d r" "d l" "t t" "b b";gap:6px 10px;align-items:center;padding-top:12px;padding-bottom:12px}
-.cmp.mini .loc-head{grid-area:h}
-.cmp.mini .loc-head h2{font-size:1.05rem}
-.cmp.mini .cmp-dial{grid-area:d;max-width:190px;width:100%}
-.cmp.mini .cmp-read{grid-area:r;align-self:end}
-.cmp.mini .cmp-read b{font-size:1.3rem}
-.cmp.mini .cmp-read span{font-size:.72rem;display:block;line-height:1.5}
-.cmp.mini #cmpAim{font-size:.72rem!important}
-.cmp.mini .cmp-legend{grid-area:l;grid-template-columns:1fr;gap:4px;align-self:start}
-.cmp.mini .cmp-legend>div{padding:4px 7px;font-size:.7rem;gap:4px}
-.cmp.mini .cmp-legend i{width:8px;height:8px}
-.cmp.mini .btns{grid-area:b}
-.cmp.mini .btn{padding:7px 8px;font-size:.82rem;min-width:90px}
-.cmp.mini .note{display:none}
-.dates.cd{grid-area:t;margin:4px 2px 0;font-size:.82rem;color:var(--ink);opacity:.85}
+.cmp.mini{display:flex;flex-direction:column;gap:6px;padding-top:10px;padding-bottom:10px}
+.cmpIcon{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:1px solid var(--gold);background:rgba(232,190,92,.12);color:var(--gold);border-radius:12px;font:600 .78rem var(--body);cursor:pointer;padding:4px}
+.cmpIcon[aria-expanded="true"]{background:rgba(232,190,92,.28)}
+.cmpPanel{display:grid;grid-template-columns:minmax(0,46%) minmax(0,1fr);grid-template-areas:"h h" "d r" "d l" "b b";gap:6px 10px;align-items:center;border-top:1px solid var(--line);padding-top:10px;margin-top:4px}
+.cmpPanel[hidden]{display:none}
+.cmpPanel .loc-head{grid-area:h}
+.cmpPanel .loc-head h2{font-size:1.05rem}
+.cmpPanel .cmp-dial{grid-area:d;max-width:190px;width:100%}
+.cmpPanel .cmp-read{grid-area:r;align-self:end}
+.cmpPanel .cmp-read b{font-size:1.3rem}
+.cmpPanel .cmp-read span{font-size:.72rem;display:block;line-height:1.5}
+.cmpPanel #cmpAim{font-size:.72rem!important}
+.cmpPanel .cmp-legend{grid-area:l;grid-template-columns:1fr;gap:4px;align-self:start}
+.cmpPanel .cmp-legend>div{padding:4px 7px;font-size:.7rem;gap:4px}
+.cmpPanel .cmp-legend i{width:8px;height:8px}
+.cmpPanel #cmpBtn{grid-area:b;padding:8px;font-size:.85rem}
+.cmpPanel .note{display:none}
+.dates.cd{margin:0 2px;font-size:.82rem;color:var(--ink);opacity:.85}
 .btns.rsb{display:grid;grid-template-columns:1fr minmax(0,1.05fr) 1fr;gap:6px;align-items:stretch}
 .btns.rsb .btn{min-width:0;padding:6px 4px;font-size:.8rem;line-height:1.3}
 .stat.rsx{text-align:center;padding:5px 4px}
@@ -156,7 +159,14 @@ h2{font-family:var(--display);color:var(--gold);font-size:1.15rem;margin:0}
     <h1>ساعة حُسبان</h1>
     <label class="sel end" for="city" title="المدينة"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" aria-hidden="true"><path d="M12 22s7-6.1 7-12a7 7 0 1 0-14 0c0 5.9 7 12 7 12z"/><circle cx="12" cy="10" r="2.6"/></svg><select id="city" aria-label="المدينة"></select></label>
   </header>
-  <section class="card cmp mini" aria-label="البوصلة">
+  <section class="card cmp mini" aria-label="البوصلة والشروق والغروب">
+    <div class="dates cd"><span id="greg"></span><span id="hijri"></span></div>
+    <div class="btns rsb">
+      <div class="stat rsx"><span class="lbl">☀ الشروق</span><b class="num" id="rise"></b></div>
+      <button class="cmpIcon" id="cmpOpen" type="button" aria-expanded="false" aria-controls="cmpPanel"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M15.8 8.2l-2.2 5.4-5.4 2.2 2.2-5.4z" fill="rgba(232,190,92,.25)"/><circle cx="12" cy="12" r="1"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2"/></svg><span>البوصلة</span></button>
+      <div class="stat rsx"><span class="lbl">☾ الغروب</span><b class="num" id="set"></b></div>
+    </div>
+    <div class="cmpPanel" id="cmpPanel" hidden>
     <div class="loc-head"><h2>البوصلة</h2><span class="badge warn" id="cmpState">متوقفة</span></div>
     <div class="cmp-dial"><svg id="cmp" viewBox="-24 -30 348 354" role="img" aria-label="قرص البوصلة"></svg></div>
     <div class="cmp-read"><b class="num" id="cmpDeg">—</b><span id="cmpDir">شغّل البوصلة لقراءة اتجاه الهاتف</span><div id="cmpAim" style="font-size:.85rem;margin-top:4px;color:var(--muted)"></div></div>
@@ -166,13 +176,9 @@ h2{font-family:var(--display);color:var(--gold);font-size:1.15rem;margin:0}
       <div><span><i style="background:var(--night);border-radius:2px;width:5px;height:14px"></i>غروب اليوم</span><b id="lgSet">—</b></div>
       <div><span><i style="background:#3fbf7f;border-radius:2px"></i>القبلة</span><b id="lgQibla">—</b></div>
     </div>
-    <div class="dates cd"><span id="greg"></span><span id="hijri"></span></div>
-    <div class="btns rsb">
-      <div class="stat rsx"><span class="lbl">☀ الشروق</span><b class="num" id="rise"></b></div>
       <button class="btn" id="cmpBtn" type="button">تشغيل البوصلة</button>
-      <div class="stat rsx"><span class="lbl">☾ الغروب</span><b class="num" id="set"></b></div>
-    </div>
     <p class="note" id="cmpNote">البوصلة تعمل دون شبكة ولا إنترنت، من المستشعر المغناطيسي في الهاتف. أمسك الهاتف أفقيًا بعيدًا عن المعادن. إن اضطربت القراءة، حرّك الهاتف في شكل الرقم 8.</p>
+    </div>
   </section>
 
   <div class="dial"><svg id="dial" viewBox="-72 -46 444 392" aria-label="قرص الشمس اليومي"></svg></div>
@@ -339,6 +345,8 @@ function compassFrame(){
     const st=$("cmpState");if(compassOffset||headingAbs){st.className="badge ok";st.textContent="تعمل"}else{st.className="badge warn";st.textContent="تحتاج معايرة"}}
   requestAnimationFrame(compassFrame);
 }
+$("cmpOpen").onclick=()=>{const p=$("cmpPanel"),open=p.hidden;p.hidden=!open;$("cmpOpen").setAttribute("aria-expanded",open);
+  if(!open&&compassOn)$("cmpBtn").click()};
 $("cmpBtn").onclick=async()=>{
   if(compassOn){compassOn=false;oriStop("compass");$("cmpBtn").textContent="تشغيل البوصلة";$("cmpCard").setAttribute("transform","");document.querySelectorAll("#cmp .cl").forEach(el=>el.removeAttribute("transform"));$("cmpDeg").textContent="—";$("cmpDir").textContent="البوصلة متوقفة";$("cmpAim").textContent="";const st=$("cmpState");st.className="badge warn";st.textContent="متوقفة";return}
   if(!window.isSecureContext){$("cmpDir").textContent="البوصلة تحتاج أن تُفتح الصفحة عبر https.";return}
